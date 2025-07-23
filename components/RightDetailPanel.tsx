@@ -1,69 +1,91 @@
 // components/RightDetailPanel.tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Word } from '../types';
-// Bileşenin alacağı propların tipleri
+
 interface RightDetailPanelProps {
-  word: Word | null; // Gösterilecek kelime veya null (panel kapalıysa)
-  onClose: () => void; // Paneli kapatma fonksiyonu
+  word: Word | null;
+  onClose: () => void;
 }
 
 const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) => {
-  // Eğer gösterilecek bir kelime yoksa, bileşen hiçbir şey render etmez (ekranda görünmez).
+  // This state controls the opacity for the fade effect.
+  const [isVisible, setIsVisible] = useState(false);
+
+  // This effect runs when the 'word' prop from the parent changes.
+  useEffect(() => {
+    // If we receive a word, it means the panel should start fading in.
+    if (word) {
+      // We use a tiny delay to ensure the transition triggers correctly.
+      const timer = setTimeout(() => setIsVisible(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      // If the word becomes null, hide immediately.
+      setIsVisible(false);
+    }
+  }, [word]);
+
+  // If there's no word, we don't render the component at all.
   if (!word) {
     return null;
   }
+  
+  // This function handles the closing sequence.
+  const handleClose = () => {
+    // 1. Start the fade-out animation.
+    setIsVisible(false);
 
-  // --- RENDER ---
+    // 2. Wait for the animation to finish (200ms, matching our CSS).
+    setTimeout(() => {
+      // 3. After fading out, tell the parent to remove the component.
+      onClose();
+    }, 200);
+  };
+
+  // This combines the base style with our dynamic opacity.
+  const dynamicPanelStyle: React.CSSProperties = {
+    ...panelStyle,
+    opacity: isVisible ? 1 : 0, // Opacity is 1 when visible, 0 when not.
+  };
+
   return (
-    // Dış katman (arka planı karartmak için)
-    <div style={overlayStyle} onClick={onClose}>
-      {/* Panel içeriği (tıklamaların arka plana gitmesini engeller) */}
-      <div style={panelStyle} onClick={(e) => e.stopPropagation()}>
-        <div style={panelHeaderStyle}>
-          <h2>{word.word}</h2>
-          <button onClick={onClose} style={closeButtonStyle}>×</button>
-        </div>
-        <div style={panelBodyStyle}>
-          <p><strong>Köken Dili:</strong> {word.originLanguage}</p>
-          <p><strong>Dönem:</strong> {word.period}</p>
-          <p><strong>Örnek Cümle:</strong> "{word.exampleSentence}"</p>
-          <p><strong>Kaynak:</strong> {word.source}</p>
-          {word.references && (
-            <p>
-              <strong>Referans:</strong>{' '}
-              <a href={word.references} target="_blank" rel="noopener noreferrer">
-                {word.references}
-              </a>
-            </p>
-          )}
-        </div>
+    <div style={dynamicPanelStyle}>
+      <div style={panelHeaderStyle}>
+        <h2>{word.word}</h2>
+        <button onClick={handleClose} style={closeButtonStyle}>×</button>
+      </div>
+      <div style={panelBodyStyle}>
+        <p><strong>Köken Dili:</strong> {word.originLanguage}</p>
+        <p><strong>Dönem:</strong> {word.period}</p>
+        <p><strong>Örnek Cümle:</strong> "{word.exampleSentence}"</p>
+        <p><strong>Kaynak:</strong> {word.source}</p>
+        {word.references && (
+          <p>
+            <strong>Referans:</strong>{' '}
+            <a href={word.references} target="_blank" rel="noopener noreferrer">
+              {word.references}
+            </a>
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
-// --- STİL OBJELERİ ---
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  zIndex: 1000,
-  display: 'flex',
-  justifyContent: 'flex-end' // Paneli sağa yasla
-};
-
+// --- STYLES ---
 const panelStyle: React.CSSProperties = {
-  width: '400px',
+  width: '350px',
   height: '100%',
-  backgroundColor: 'white',
-  boxShadow: '-2px 0 5px rgba(0,0,0,0.1)',
+  backgroundColor: '#f8f9fa',
+  borderLeft: '1px solid #dee2e6',
   display: 'flex',
   flexDirection: 'column',
-  animation: 'slideIn 0.3s forwards' // CSS animasyonu için
+  position: 'relative',
+  zIndex: 1,
+  
+  // --- This is the key to the animation ---
+  // We transition the 'opacity' property over a short 0.2 seconds.
+  transition: 'opacity 0.2s ease-in-out',
 };
 
 const panelHeaderStyle: React.CSSProperties = {
@@ -71,23 +93,22 @@ const panelHeaderStyle: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '20px',
-  borderBottom: '1px solid #eee',
-  backgroundColor: '#f8f9fa'
+  backgroundColor: '#00695c',
+  color: 'white',
 };
 
 const closeButtonStyle: React.CSSProperties = {
   background: 'none',
   border: 'none',
   fontSize: '24px',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  color: 'white',
 };
 
 const panelBodyStyle: React.CSSProperties = {
   padding: '20px',
-  overflowY: 'auto'
+  overflowY: 'auto',
+  flex: 1,
 };
-
-// Animasyon için CSS'i global olarak eklememiz gerekecek.
-// Onu bir sonraki adımda yapacağız.
 
 export default RightDetailPanel;

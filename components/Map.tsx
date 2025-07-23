@@ -1,52 +1,64 @@
-// components/Map.tsx (DÜZELTİLMİŞ VERSİYON)
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import L, { Marker as MarkerType } from 'leaflet';
 import { Word, WordOnMap } from '../types';
 
-// Marker iconunun varsayılan yolunu düzeltiyoruz.
-// Leaflet'in varsayılan ikonları Next.js ile doğru çalışmayabilir, bu yüzden bu fix gereklidir.
-// ÖNCEKİ HATALI SATIR BURADAYDI. ŞİMDİ DOĞRUSU YAZIYOR.
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
-
-
-// Haritanın akıcı bir şekilde belirli bir noktaya uçmasını sağlayan yardımcı bileşen.
-interface FlyToMarkerProps {
-  target: [number, number] | null;
+// Helper component to handle map interactions
+interface MapControllerProps {
+  mapFlyToTarget: [number, number] | null;
+  popupToOpen: number | null;
+  markerRefs: React.MutableRefObject<{[key: number]: MarkerType | null}>;
 }
 
-const FlyToMarker: React.FC<FlyToMarkerProps> = ({ target }) => {
+const MapController: React.FC<MapControllerProps> = ({ mapFlyToTarget, popupToOpen, markerRefs }) => {
   const map = useMap();
 
+  // Effect for flying to a target
   useEffect(() => {
-    if (target) {
-      map.flyTo(target, map.getZoom() < 8 ? 8 : map.getZoom(), {
+    if (mapFlyToTarget) {
+      const targetZoom = map.getZoom() < 8 ? 8 : map.getZoom();
+      map.flyTo(mapFlyToTarget, targetZoom, {
         duration: 1.5,
       });
     }
-  }, [target, map]);
+  }, [mapFlyToTarget, map]);
+
+  // Effect for opening a popup
+  useEffect(() => {
+    if (popupToOpen !== null) {
+      const markerToOpen = markerRefs.current[popupToOpen];
+      if (markerToOpen) {
+        setTimeout(() => {
+          markerToOpen.openPopup();
+        }, 800);
+      }
+    }
+  }, [popupToOpen, map, markerRefs]);
 
   return null;
 };
 
 
-// DEĞİŞİKLİK 2: MapProps'a yeni bir fonksiyon prop'u ekliyoruz.
+// Main Map Component props
 interface MapProps {
   wordsOnMap: WordOnMap[];
   mapFlyToTarget: [number, number] | null;
-  onShowDetails: (word: Word) => void; // Detayları göster butonuna tıklandığında çalışacak fonksiyon
+  onShowDetails: (word: Word) => void;
+  popupToOpen: number | null;
+  onPopupClose: () => void;
 }
 
-const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onShowDetails }) => {
+const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onShowDetails, popupToOpen, onPopupClose }) => {
   const initialCenter: [number, number] = [39.9334, 32.8597];
   const initialZoom = 4;
+  const markerRefs = useRef<{[key: number]: MarkerType | null}>({});
+
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  });
 
   return (
     <MapContainer
@@ -59,21 +71,29 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onShowDetails }) 
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
       />
-
-      <FlyToMarker target={mapFlyToTarget} />
+      
+      <MapController 
+        mapFlyToTarget={mapFlyToTarget}
+        popupToOpen={popupToOpen}
+        markerRefs={markerRefs}
+      />
 
       {wordsOnMap.map((word) => (
-        <Marker key={word.id} position={word.coordinates}>
-          <Popup>
+        <Marker 
+          key={word.id} 
+          position={word.coordinates}
+          ref={(el: any) => (markerRefs.current[word.id] = el)}
+        >
+          <Popup
+            eventHandlers={{
+              remove: () => onPopupClose(),
+            }}
+          >
             <div>
-              <h3 style={{ marginTop: 0, marginBottom: '10px' }}>{word.word}</h3>
-              <p style={{ margin: '4px 0' }}><strong>Köken:</strong> {word.originLanguage}</p>
-              <p style={{ margin: '4px 0' }}><strong>Örnek:</strong> "{word.exampleSentence}"</p>
-              {/* DEĞİŞİKLİK 3: Butonu ekliyor ve onShowDetails fonksiyonuna bağlıyoruz. */}
-              <button
-                onClick={() => onShowDetails(word)}
-                style={{ marginTop: '10px', padding: '8px 12px', cursor: 'pointer', border: '1px solid #00695c', backgroundColor: '#00695c', color: 'white', borderRadius: '4px' }}
-              >
+              <h3>{word.word}</h3>
+              <p><strong>Köken:</strong> {word.originLanguage}</p>
+              <p><strong>Örnek:</strong> "{word.exampleSentence}"</p>
+              <button onClick={() => onShowDetails(word)} style={{ marginTop: '10px', padding: '8px 12px', cursor: 'pointer', border: '1px solid #00695c', backgroundColor: '#00695c', color: 'white', borderRadius: '4px' }}>
                 Detayları Göster
               </button>
             </div>
