@@ -1,0 +1,14 @@
+[
+  {"language": "Fransızca", "representativeCountry": "Fransa", "boundingBox": [42.321, -4.790, 51.091, 8.230]},
+  {"language": "Türkçe", "representativeCountry": "Türkiye", "boundingBox": [35.815, 25.666, 42.106, 44.818]},
+  {"language": "Farsça", "representativeCountry": "İran", "boundingBox": [24.894, 44.032, 39.780, 63.338]},
+  {"language": "İtalyanca", "representativeCountry": "İtalya", "boundingBox": [35.493, 6.627, 47.092, 18.521]},
+  {"language": "İngilizce", "representativeCountry": "İngiltere", "boundingBox": [49.911, -6.379, 60.860, 1.763]},
+  {"language": "Arapça", "representativeCountry": "Suudi Arabistan", "boundingBox": [16.375, 34.568, 32.155, 55.672]},
+  {"language": "Almanca", "representativeCountry": "Almanya", "boundingBox": [47.270, 5.866, 55.058, 15.042]},
+  {"language": "Yunanca", "representativeCountry": "Yunanistan", "boundingBox": [34.812, 19.373, 41.748, 29.645]},
+  {"language": "Hırvatça", "representativeCountry": "Hırvatistan", "boundingBox": [42.390, 13.486, 46.554, 19.449]},
+  {"language": "Çekçe", "representativeCountry": "Çek Cumhuriyeti", "boundingBox": [48.552, 12.091, 51.056, 18.859]},
+  {"language": "Japonca", "representativeCountry": "Japonya", "boundingBox": [24.225, 122.934, 45.523, 145.820]},
+  {"language": "İspanyolca", "representativeCountry": "İspanya", "boundingBox": [36.000, -9.313, 43.792, 3.328]}
+]
