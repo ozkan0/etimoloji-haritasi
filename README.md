@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Etimoloji Haritası
 
-First, run the development server:
+**Türkçe Kelimelerin Köken Haritası**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Bu proje, Türkçedeki kelimelerin etimolojik kökenlerini interaktif bir dünya haritası üzerinde görselleştiren bir web uygulamasıdır.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+![Son Sürüm Ekran Görüntüsü](https://i.imgur.com/EMRYr26.gif)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Proje Hakkında
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Etimoloji Haritası, Türkçenin tarih boyunca diğer dillerle olan etkileşimini analitik verilerle ve görsel bir arayüzle sunmayı hedefler. Kullanıcılar, kelimelerin köken dillerini ve Türkçeye hangi tarihsel dönemde girdiklerini harita üzerinde keşfedebilirler.
 
-## Learn More
+Bu platformun interaktif anlatımı ve toplu veri sunması sayesinde lise ve ortaokul öğrencilerinden dil meraklılarına kadar geniş bir kitle için değerli ve eğitici bir kaynak haline gelebilecek.
 
-To learn more about Next.js, take a look at the following resources:
+### Temel Özellikler
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+*   **İnteraktif Dünya Haritası:** Kelime kökenlerini coğrafi olarak gösteren, kaydırılabilir ve yakınlaştırılabilir Leaflet haritası.
+*   **Dinamik Kelime İşaretçileri:** Harita üzerinde varsayılan ikonlar yerine kelimelerin kendisi gösterilir.
+*   **Filtrelenebilir Kelime Listesi:** Sol panelde bulunan tüm kelimeleri anlık olarak arama, köken diline veya döneme göre filtreleme.
+*   **Bilgilendirici Pencereler:** Haritadaki bir kelimeye tıklandığında, o kelimenin kökeni ve örnek cümle kullanımı gibi temel bilgileri gösteren bir pencere açılır.
+*   **Detay Paneli:** Kullanıcılar, daha fazla bilgi için kelimenin kaynak, referanslar ve dönem gibi tüm detaylarını içeren sağ paneli açabilirler.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Kullanılan Teknolojiler
 
-## Deploy on Vercel
+*   **Framework:** Next.js
+*   **Dil:** TypeScript
+*   **UI Kütüphanesi:** React
+*   **Harita:** Leaflet & React Leaflet
+*   **Veri Yönetimi:** Statik JSON
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Projeyi Yerel Makinede Çalıştırma
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin.
+
+### Gereksinimler
+
+*   Node.js (v18 veya üstü)
+*   npm
+
+### Kurulum
+
+1.  **Repository'yi klonlayın:**
+    ```bash
+    git clone https://github.com/kullanici-adiniz/etimoloji-haritasi.git
+    ```
+
+2.  **Proje dizinine gidin:**
+    ```bash
+    cd etimoloji-haritasi
+    ```
+
+3.  **Gerekli paketleri yükleyin:**
+    ```bash
+    npm install
+    ```
+
+4.  **Geliştirme sunucusunu başlatın:**
+    ```bash
+    npm run dev
+    ```
+
+5.  Tarayıcınızda `http://localhost:3000` adresini açın.
+
+## Planlanan Yeni Özellikler (Roadmap)
+
+Bu proje aktif olarak geliştirilmektedir. Gelecekte eklenmesi planlanan bazı özellikler:
+
+*   **Karanlık/Aydınlık Mod:** Kullanıcıların tercihine göre arayüz temasını değiştirebilmesi için bir switch.
+*   **Mobil Uyumluluk:** Uygulamanın telefon ve tablet gibi küçük ekranlarda da sorunsuz ve estetik bir şekilde çalışması için arayüzün iyileştirilmesi.
+*   **URL ile Durum Paylaşımı:** Belirli bir kelime seçiliyken veya bir filtre uygulanmışken, o anki görünümün URL üzerinden paylaşılabilmesi.
+*   **Kullanıcı Katkısı:** Kullanıcıların yeni kelime önermesi veya mevcut verilerde düzeltme talep etmesi için bir form sistemi.
+*   **Veritabanı Entegrasyonu:** Proje büyüdükçe, kelime verilerini yönetmek için JSON dosyaları yerine Supabase veya Firebase gibi bir veritabanı çözümüne geçilmesi.
+*   **Gelişmiş Görselleştirmeler:** Kelime detayları panelinde, kelimenin kullanım sıklığı gibi verileri gösteren basit grafikler eklenmesi.
+
+## Katkıda Bulunma
+
+Katkıda bulunmak isterseniz, lütfen bir "issue" açarak veya bir "pull request" göndererek iletişime geçin. Tüm katkılara açığım.
+
+## Lisans
+
+Bu proje MIT Lisansı ile lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına bakın.
