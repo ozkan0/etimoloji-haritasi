@@ -6,6 +6,7 @@
 Bu proje, Türkçedeki kelimelerin etimolojik kökenlerini interaktif bir dünya haritası üzerinde görselleştiren bir web uygulamasıdır.
 <img width="1920" height="957" alt="etimoloji-haritasi-latest-beta" src="https://github.com/user-attachments/assets/60f5e9c3-493c-4f90-ba12-8c71889fc49f" />
 
+canlı demo:    https://etimoloji-haritasi.vercel.app/
 ## Proje Hakkında
 
 Etimoloji Haritası, Türkçenin tarih boyunca diğer dillerle olan etkileşimini analitik verilerle ve görsel bir arayüzle sunmayı hedefler. Kullanıcılar, kelimelerin köken dillerini ve Türkçeye hangi tarihsel dönemde girdiklerini harita üzerinde keşfedebilirler.
