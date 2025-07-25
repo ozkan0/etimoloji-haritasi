@@ -1,69 +1,50 @@
-import React, { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L, { Marker as MarkerType } from 'leaflet';
+// components/Map.tsx
+
+import React from 'react';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import { Word, WordOnMap } from '../types';
+import { PopupData } from './CustomPopup';
 
-// Helper component to handle map interactions
-interface MapControllerProps {
-  mapFlyToTarget: [number, number] | null;
-  popupToOpen: number | null;
-  markerRefs: React.MutableRefObject<{[key: number]: MarkerType | null}>;
-}
-
-const MapController: React.FC<MapControllerProps> = ({ mapFlyToTarget, popupToOpen, markerRefs }) => {
-  const map = useMap();
-
-  // Effect for flying to a target
-  useEffect(() => {
-    if (mapFlyToTarget) {
-      const targetZoom = map.getZoom() < 8 ? 8 : map.getZoom();
-      map.flyTo(mapFlyToTarget, targetZoom, {
-        duration: 1.5,
-      });
-    }
-  }, [mapFlyToTarget, map]);
-
-  // Effect for opening a popup
-  useEffect(() => {
-    if (popupToOpen !== null) {
-      const markerToOpen = markerRefs.current[popupToOpen];
-      if (markerToOpen) {
-        setTimeout(() => {
-          markerToOpen.openPopup();
-        }, 800);
-      }
-    }
-  }, [popupToOpen, map, markerRefs]);
-
+const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
+  useMapEvents({ click: () => onClick() });
   return null;
 };
 
+const FlyToMarker = ({ target }: { target: [number, number] | null }) => {
+  const map = useMap();
+  React.useEffect(() => {
+    if (target) {
+      const targetZoom = map.getZoom() < 8 ? 8 : map.getZoom();
+      map.flyTo(target, targetZoom, { duration: 1.5 });
+    }
+  }, [target, map]);
+  return null;
+};
 
-// Main Map Component props
+// --- THIS IS THE FIX ---
+// The `onShowDetails` prop has been removed from this interface.
 interface MapProps {
   wordsOnMap: WordOnMap[];
   mapFlyToTarget: [number, number] | null;
-  onShowDetails: (word: Word) => void;
-  popupToOpen: number | null;
-  onPopupClose: () => void;
+  onMarkerClick: (data: PopupData) => void;
+  onMapClick: () => void;
 }
 
-const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onShowDetails, popupToOpen, onPopupClose }) => {
-  const initialCenter: [number, number] = [39.9334, 32.8597];
-  const initialZoom = 4;
-  const markerRefs = useRef<{[key: number]: MarkerType | null}>({});
-
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-  });
+const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, onMapClick }) => {
+  const createWordIcon = (wordText: string) => {
+    return L.divIcon({
+      className: 'word-marker-icon',
+      html: `<span>${wordText}</span>`,
+      iconSize: 'auto' as any,
+      iconAnchor: [0, 0],
+    });
+  };
 
   return (
     <MapContainer
-      center={initialCenter}
-      zoom={initialZoom}
+      center={[39.9334, 32.8597]}
+      zoom={4}
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%', zIndex: 0 }}
     >
@@ -72,34 +53,27 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onShowDetails, po
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
       />
       
-      <MapController 
-        mapFlyToTarget={mapFlyToTarget}
-        popupToOpen={popupToOpen}
-        markerRefs={markerRefs}
-      />
+      <MapClickHandler onClick={onMapClick} />
+      <FlyToMarker target={mapFlyToTarget} />
 
-      {wordsOnMap.map((word) => (
-        <Marker 
-          key={word.id} 
-          position={word.coordinates}
-          ref={(el: any) => (markerRefs.current[word.id] = el)}
-        >
-          <Popup
+      {wordsOnMap.map((word) => {
+        if (isNaN(word.coordinates[0]) || isNaN(word.coordinates[1])) {
+          return null;
+        }
+
+        return (
+          <Marker 
+            key={word.id} 
+            position={word.coordinates}
+            icon={createWordIcon(word.word)}
             eventHandlers={{
-              remove: () => onPopupClose(),
+              click: (e) => {
+                onMarkerClick({ word, position: e.containerPoint });
+              },
             }}
-          >
-            <div>
-              <h3>{word.word}</h3>
-              <p><strong>Köken:</strong> {word.originLanguage}</p>
-              <p><strong>Örnek:</strong> "{word.exampleSentence}"</p>
-              <button onClick={() => onShowDetails(word)} style={{ marginTop: '10px', padding: '8px 12px', cursor: 'pointer', border: '1px solid #00695c', backgroundColor: '#00695c', color: 'white', borderRadius: '4px' }}>
-                Detayları Göster
-              </button>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+          />
+        );
+      })}
     </MapContainer>
   );
 };

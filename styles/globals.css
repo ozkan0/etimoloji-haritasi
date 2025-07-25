@@ -9,3 +9,86 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
+.word-marker-icon {
+  background-color: white;
+  border: 1px solid #666;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translate(-50%, -115%); /* Centers the label perfectly above the point */
+}
+
+:root {
+  --popup-background: white;
+  --popup-text-primary: #333;
+  --popup-text-secondary: #666;
+  --popup-border-color: #ccc;
+  --popup-shadow-color: rgba(0, 0, 0, 0.2);
+  --popup-button-bg: #00695c;
+  --popup-button-text: white;
+}
+
+.custom-popup {
+  position: absolute;
+  background-color: var(--popup-background);
+  color: var(--popup-text-primary);
+  border: 1px solid var(--popup-border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--popup-shadow-color);
+  padding: 1rem;
+  width: 250px;
+  z-index: 1001;
+  font-family: sans-serif;
+  transform: translate(-50%, -115%);
+  transition: opacity 0.2s ease-in-out;
+}
+
+.custom-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--popup-border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.custom-popup-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.custom-popup-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--popup-text-secondary);
+}
+
+.custom-popup-body p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.custom-popup-body strong {
+  color: var(--popup-text-secondary);
+}
+
+.custom-popup-details-btn {
+  margin-top: 1rem;
+  padding: 8px 12px;
+  width: 100%;
+  cursor: pointer;
+  border: 1px solid var(--popup-button-bg);
+  background-color: var(--popup-button-bg);
+  color: var(--popup-button-text);
+  border-radius: 4px;
+  font-weight: 600;
+}

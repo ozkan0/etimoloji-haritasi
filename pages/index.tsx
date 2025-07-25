@@ -1,3 +1,5 @@
+// pages/index.tsx
+
 import type { GetStaticProps, NextPage } from 'next';
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
@@ -6,6 +8,7 @@ import { promises as fs } from 'fs';
 import dynamic from 'next/dynamic';
 import LeftSidebar from '../components/LeftSidebar';
 import RightDetailPanel from '../components/RightDetailPanel';
+import CustomPopup, { PopupData } from '../components/CustomPopup';
 import { Word, Language, WordOnMap } from '../types';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
@@ -29,7 +32,7 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
   const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
-  const [popupToOpen, setPopupToOpen] = useState<number | null>(null);
+  const [activePopupData, setActivePopupData] = useState<PopupData | null>(null);
 
   useEffect(() => {
     if (allLanguages && allLanguages.length > 0) {
@@ -57,36 +60,32 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
     }
   }, [allWords, allLanguages]);
 
-  
   const handleWordSelect = (selectedWord: Word) => {
-    const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
-    
-    // --- THIS IS THE NEW LOGIC ---
-    // Check if the detail panel is currently open.
+    const languageData = allLanguages.find(lang => lang.language === selectedWord.originLanguage);
+    if (!languageData || !languageData.boundingBox) {
+      return;
+    }
     if (detailPanelWord) {
-      // If it is open, update it with the new word that was just clicked.
       setDetailPanelWord(selectedWord);
     }
-    // --- END OF NEW LOGIC ---
-
+    const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
     if (existingWord) {
       setMapFlyToTarget(existingWord.coordinates);
-      setPopupToOpen(existingWord.id);
     } else {
-      const languageData = allLanguages.find(lang => lang.language === selectedWord.originLanguage);
-      if (!languageData) {
-        console.error("Kelimenin köken dili için harita verisi bulunamadı:", selectedWord.originLanguage);
-        return;
-      }
       const newCoordinates = getRandomCoordinatesInBoundingBox(languageData.boundingBox);
-      const newWordOnMap: WordOnMap = {
-        ...selectedWord,
-        coordinates: newCoordinates,
-      };
+      const newWordOnMap: WordOnMap = { ...selectedWord, coordinates: newCoordinates };
       setWordsOnMap(prevWords => [...prevWords, newWordOnMap]);
       setMapFlyToTarget(newCoordinates);
-      setPopupToOpen(newWordOnMap.id);
     }
+    setActivePopupData(null);
+  };
+
+  const handleMarkerClick = (data: PopupData) => {
+    setActivePopupData(data);
+  };
+  
+  const handleClosePopups = () => {
+    setActivePopupData(null);
   };
 
   return (
@@ -99,16 +98,28 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
 
       <LeftSidebar allWords={allWords} onWordSelect={handleWordSelect} />
 
-      <main style={{ flex: 1, display: 'flex' }}>
+      <main style={{ flex: 1, display: 'flex', position: 'relative' }}>
+        {/* --- THE FIX IS HERE --- */}
+        {/* The `onShowDetails` prop has been removed from this component call. */}
         <MapComponent 
           wordsOnMap={wordsOnMap} 
           mapFlyToTarget={mapFlyToTarget} 
-          onShowDetails={(word) => setDetailPanelWord(word)}
-          popupToOpen={popupToOpen}
-          onPopupClose={() => setPopupToOpen(null)}
+          onMarkerClick={handleMarkerClick}
+          onMapClick={handleClosePopups}
         />
+        
+        {activePopupData && (
+          <CustomPopup 
+            data={activePopupData}
+            onClose={handleClosePopups}
+            onShowDetails={(word) => {
+              setDetailPanelWord(word);
+              setActivePopupData(null);
+            }}
+          />
+        )}
       </main>
-      
+
       <RightDetailPanel 
         word={detailPanelWord} 
         onClose={() => setDetailPanelWord(null)} 
