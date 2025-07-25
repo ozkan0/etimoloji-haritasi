@@ -4,7 +4,9 @@
 **Türkçe Kelimelerin Köken Haritası**
 
 Bu proje, Türkçedeki kelimelerin etimolojik kökenlerini interaktif bir dünya haritası üzerinde görselleştiren bir web uygulamasıdır.
-<img width="1920" height="957" alt="etimoloji-haritasi-latest-beta" src="https://github.com/user-attachments/assets/60f5e9c3-493c-4f90-ba12-8c71889fc49f" />
+**Şuan leaflet marker popup component, custom popup olarak düzgün çalışmıyor. Bu hata tamamen düzeltilene kadar hata mesajları alabilirsiniz.**
+
+<img width="1920" height="958" alt="etimoloji-haritasi-latest-beta" src="https://github.com/user-attachments/assets/82dbce5d-e29e-4572-aad8-806b728720ac" />
 
 canlı demo:    https://etimoloji-haritasi.vercel.app/
 ## Proje Hakkında
