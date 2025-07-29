@@ -1,21 +1,23 @@
-// components/LeftSidebar.tsx (TAM VE DÜZELTİLMİŞ KOD)
-
 import React, { useState, useMemo } from 'react';
 import { Word } from '../types';
-// Bileşenin alacağı propların (özelliklerin) tipini tanımlıyoruz
+
 interface LeftSidebarProps {
   allWords: Word[];
-  onWordSelect: (word: Word) => void; // Bir kelime seçildiğinde çalışacak fonksiyon
+  onWordSelect: (word: Word) => void;
+  isVisible: boolean;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect }) => {
-  // --- STATE (DURUM) YÖNETİMİ ---
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVisible }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [languageFilter, setLanguageFilter] = useState('Tüm Diller');
-  // ÖNCEKİ HATALI SATIR BURADA DÜZELTİLDİ
   const [periodFilter, setPeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
+  
+  const dynamicSidebarStyle: React.CSSProperties = {
+    ...sidebarStyle,
+    
+    transform: isVisible ? 'translateX(0)' : 'translateX(-100%)',
+  };
 
-  // --- FİLTRELEME MANTIĞI ---
   const filteredWords = useMemo(() => {
     return allWords
       .filter(word => {
@@ -27,13 +29,12 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect }) => 
       .sort((a, b) => a.word.localeCompare(b.word, 'tr'));
   }, [allWords, searchTerm, languageFilter, periodFilter]);
 
-  // --- FİLTRE SEÇENEKLERİNİ HAZIRLAMA ---
   const availableLanguages = useMemo(() => ['Tüm Diller', ...new Set(allWords.map(w => w.originLanguage).sort())], [allWords]);
   const availablePeriods: ('Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet')[] = ['Tüm Dönemler', 'Osmanlı Öncesi', 'Osmanlı', 'Cumhuriyet'];
 
-  // --- RENDER (EKRANA ÇİZDİRME) ---
   return (
-    <div style={sidebarStyle}>
+    
+    <div style={dynamicSidebarStyle}>
       <div style={headerStyle}>
         <h2>Etimoloji Haritası</h2>
         <input
@@ -65,16 +66,24 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect }) => 
   );
 };
 
-// --- STİL OBJELERİ ---
+
 const sidebarStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  zIndex: 1001,
+  transition: 'transform 0.3s ease-in-out',
+  boxShadow: '3px 0px 15px rgba(0,0,0,0.1)',
+
   width: '350px',
   height: '100vh',
   backgroundColor: '#f8f9fa',
-  borderRight: '1px solid #dee2e6',
+  borderRight: '1px solid #dee2ege6',
   display: 'flex',
   flexDirection: 'column',
   fontFamily: 'sans-serif'
 };
+
 const headerStyle: React.CSSProperties = {
   padding: '20px',
   backgroundColor: '#00695c',
