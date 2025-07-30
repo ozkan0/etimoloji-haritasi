@@ -147,7 +147,7 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
       <Head>
         <title>Etimoloji Haritası</title>
         <meta name="description" content="Türkçe kelimelerin etimolojik köken haritası" />
-        <link rel="icon" href="/favicon.ico" />
+        {/* <link rel="icon" href="/favicon.ico" /> */}
       </Head>
 
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />

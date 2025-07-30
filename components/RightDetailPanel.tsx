@@ -92,7 +92,7 @@ const panelHeaderStyle: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '20px',
-  backgroundColor: '#00695c',
+  backgroundColor: '#0094ff',
   color: 'white',
 };
 
