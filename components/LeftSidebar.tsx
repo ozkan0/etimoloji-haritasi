@@ -86,7 +86,7 @@ const sidebarStyle: React.CSSProperties = {
 
 const headerStyle: React.CSSProperties = {
   padding: '20px',
-  backgroundColor: '#00695c',
+  backgroundColor: '#0094ff',
   color: 'white'
 };
 const searchInputStyle: React.CSSProperties = {
