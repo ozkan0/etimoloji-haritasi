@@ -1,8 +1,9 @@
 import React from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import L, { LatLngBoundsExpression } from 'leaflet';
 import { Word, WordOnMap } from '../types';
 import { PopupData } from './CustomPopup';
+import { useTheme } from '../context/ThemeContext';
 
 const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
   useMapEvents({ click: () => onClick() });
@@ -43,6 +44,20 @@ interface MapProps {
 }
 
 const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, onMapClick, activePopupData, onPopupPositionUpdate }) => {
+  const { theme } = useTheme(); 
+  console.log("Jawg Token:", process.env.NEXT_PUBLIC_JAWG_TOKEN);
+
+  
+  // map boundaries to limit the map view
+  const mapBounds: LatLngBoundsExpression = [
+    [-40, -60], // Southwest Latitude, Longitude
+    [75, 170],  // Northeast Latitude, Longitude
+  ];
+  const lightMapUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  
+  const darkMapUrl = `https://{s}.tile.jawg.io/cff409a6-f8fe-4c7b-a746-46097db4ee20/{z}/{x}/{y}{r}.png?access-token=${process.env.NEXT_PUBLIC_JAWG_TOKEN}`;
+
+
   const createWordIcon = (wordText: string) => {
     return L.divIcon({
       className: 'word-marker-icon',
@@ -51,23 +66,32 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       iconAnchor: [0, 0],
     });
   };
-
   return (
     <MapContainer
       center={[39.9334, 32.8597]}
       zoom={4}
       scrollWheelZoom={true}
-      style={{ height: '100%', width: '100%', zIndex: 0 }}
+      style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: '#191a1a' }}
+      maxBounds={mapBounds}
+      minZoom={4}
     >
       
       <PopupPositionUpdater 
         activePopup={activePopupData} 
         onUpdate={onPopupPositionUpdate}  
       />
-      <TileLayer
-        attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-      />
+      {theme === 'light' ? (
+        <TileLayer
+        key={theme}
+          attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
+          url={lightMapUrl}
+        />
+      ) : (
+        <TileLayer
+          attribution='<a href="http://jawg.io" title="Tiles Courtesy of Jawg Maps" target="_blank">© <b>Jawg</b>Maps</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url={darkMapUrl}
+        />
+      )}
       
       <MapClickHandler onClick={onMapClick} />
       <FlyToMarker target={mapFlyToTarget} />

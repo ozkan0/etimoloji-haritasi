@@ -8,6 +8,7 @@ import LeftSidebar from '../components/LeftSidebar';
 import RightDetailPanel from '../components/RightDetailPanel';
 import CustomPopup, { PopupData } from '../components/CustomPopup';
 import { Word, Language, WordOnMap } from '../types';
+import ToggleSidebarButton from '../components/ToggleSidebarButton';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -18,36 +19,6 @@ interface ToggleSidebarButtonProps {
   isVisible: boolean;
   onClick: () => void;
 }
-
-const ToggleSidebarButton: React.FC<ToggleSidebarButtonProps> = ({ isVisible, onClick }) => {
-  const buttonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '50%',
-    left: isVisible ? '350px' : '0px', 
-    transform: 'translateY(-50%)',
-    zIndex: 1100,
-    height: '70px',
-    width: '25px',
-    backgroundColor: '#00695c',
-    color: 'white',
-    border: 'none',
-    borderTopRightRadius: '8px',
-    borderBottomRightRadius: '8px',
-    borderLeft: '1px solid #004d40',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    transition: 'left 0.3s ease-in-out',
-  };
-
-  return (
-    <button style={buttonStyle} onClick={onClick}>
-      {isVisible ? '‹' : '›'}
-    </button>
-  );
-};
 
 
 interface HomeProps {
@@ -134,8 +105,6 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
     setActivePopupData(null);
   };
   const handlePopupPositionUpdate = (newPosition: { x: number, y: number }) => {
-    // This function updates only the position part of the popup data,
-    // keeping the word and latlng the same.
     setActivePopupData(prevData => {
       if (!prevData) return null;
       return { ...prevData, position: newPosition };
