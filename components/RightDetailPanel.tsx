@@ -7,23 +7,17 @@ interface RightDetailPanelProps {
 }
 
 const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) => {
-  // This state controls the opacity for the fade effect.
   const [isVisible, setIsVisible] = useState(false);
 
-  // This effect runs when the 'word' prop from the parent changes.
   useEffect(() => {
-    // If we receive a word, it means the panel should start fading in.
     if (word) {
       const timer = setTimeout(() => setIsVisible(true), 10);
       return () => clearTimeout(timer);
     } else {
-      // If the word becomes null, start the fade-out.
       setIsVisible(false);
     }
   }, [word]);
 
-  // If there's no word AND the panel is not visible (animation finished),
-  // we render nothing. This prevents a flash of content.
   if (!word && !isVisible) {
     return null;
   }
@@ -35,19 +29,17 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) =>
     }, 200);
   };
 
-  // This combines the base style with our dynamic opacity.
   const dynamicPanelStyle: React.CSSProperties = {
     ...panelStyle,
     opacity: isVisible ? 1 : 0,
-    // This prevents the user from clicking on the invisible panel
     pointerEvents: isVisible ? 'auto' : 'none', 
   };
   
   return (
-    <div style={dynamicPanelStyle}>
+    <div style={dynamicPanelStyle} className="right-panel-main">
       {word && (
         <>
-          <div style={panelHeaderStyle}>
+          <div style={panelHeaderStyle} className="right-panel-header">
             <h2>{word.word}</h2>
             <button onClick={handleClose} style={closeButtonStyle}>×</button>
           </div>
@@ -81,8 +73,9 @@ const panelStyle: React.CSSProperties = {
 
   width: '350px',
   height: '100%',
-  backgroundColor: '#f8f9fa',
-  borderLeft: '1px solid #dee2e6',
+  backgroundColor: 'var(--sidebar-main-bg)',
+  borderLeft: '1px solid var(--sidebar-border-color)',
+  color: 'var(--sidebar-text-primary)',
   display: 'flex',
   flexDirection: 'column',
 };
@@ -91,8 +84,8 @@ const panelHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '20px',
-  backgroundColor: '#0094ff',
+  padding: '15px',
+  backgroundColor: 'var(--detailspanel-header-bg)',
   color: 'white',
 };
 
@@ -108,6 +101,7 @@ const panelBodyStyle: React.CSSProperties = {
   padding: '20px',
   overflowY: 'auto',
   flex: 1,
+  color: 'var(--sidebar-text-primary)',
 };
 
 export default RightDetailPanel;
