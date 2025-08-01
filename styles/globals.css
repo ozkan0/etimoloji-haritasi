@@ -166,7 +166,6 @@ html, body {
   border: none;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
-  border-left: 1px solid #036353;
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Word } from '../types';
-import ThemeSwitch from '../components/ThemeSwitch';
+import { useTheme } from '../context/ThemeContext';
+import ThemeSwitch from './ThemeSwitch';
 
 interface LeftSidebarProps {
   allWords: Word[];
@@ -9,11 +10,15 @@ interface LeftSidebarProps {
 }
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVisible }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [languageFilter, setLanguageFilter] = useState('Tüm Diller');
-  const [periodFilter, setPeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
   
-  // --- NEW STATE for the filter panel ---
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [activeLanguageFilter, setActiveLanguageFilter] = useState('Tüm Diller');
+  const [activePeriodFilter, setActivePeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
+
+  const [stagedSearchTerm, setStagedSearchTerm] = useState('');
+  const [stagedLanguageFilter, setStagedLanguageFilter] = useState('Tüm Diller');
+  const [stagedPeriodFilter, setStagedPeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
+
   const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
 
   const dynamicSidebarStyle: React.CSSProperties = {
@@ -24,34 +29,55 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   const filteredWords = useMemo(() => {
     return allWords
       .filter(word => {
-        const matchesSearch = word.word.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesLanguage = languageFilter === 'Tüm Diller' || word.originLanguage === languageFilter;
-        const matchesPeriod = periodFilter === 'Tüm Dönemler' || word.period === periodFilter;
+        const matchesSearch = word.word.toLowerCase().includes(activeSearchTerm.toLowerCase());
+        const matchesLanguage = activeLanguageFilter === 'Tüm Diller' || word.originLanguage === activeLanguageFilter;
+        const matchesPeriod = activePeriodFilter === 'Tüm Dönemler' || word.period === activePeriodFilter;
         return matchesSearch && matchesLanguage && matchesPeriod;
       })
       .sort((a, b) => a.word.localeCompare(b.word, 'tr'));
-  }, [allWords, searchTerm, languageFilter, periodFilter]);
+  }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
 
   const availableLanguages = useMemo(() => ['Tüm Diller', ...new Set(allWords.map(w => w.originLanguage).sort())], [allWords]);
   const availablePeriods: ('Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet')[] = ['Tüm Dönemler', 'Osmanlı Öncesi', 'Osmanlı', 'Cumhuriyet'];
 
+  const handleUpdateClick = () => {
+    setActiveSearchTerm(stagedSearchTerm);
+    setActiveLanguageFilter(stagedLanguageFilter);
+    setActivePeriodFilter(stagedPeriodFilter);
+  };
   
   return (
     <div style={dynamicSidebarStyle} className="sidebar-main">
       {/* --- HEADER SECTION --- */}
       <div style={headerStyle} className="sidebar-header">
-        
-        <div style={{width: '100%', textAlign: 'center', marginBottom: '15px'}}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '15px' }}>
           <ThemeSwitch />
-          <h2 style={{margin: 0}}>Etimoloji Haritası</h2>
+          <div style={{flex: 1, textAlign: 'center'}}>
+            <h2 style={{margin: 0, marginLeft:20, display: 'inline-block'}}>Etimoloji Haritası</h2>
+          </div>
+          <div style={{width: '40px'}} /> 
         </div>
-        <input
-          type="text"
-          placeholder="Kelime ara..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={searchInputStyle}
-        />
+
+        <div style={searchContainerStyle}>
+          <input
+            type="text"
+            placeholder="Kelime ara..."
+            value={stagedSearchTerm}
+            onChange={(e) => setStagedSearchTerm(e.target.value)}
+            style={searchInputStyle}
+          />
+          
+          {stagedSearchTerm && (
+            <button onClick={() => setStagedSearchTerm('')} style={clearButtonStyle}>
+              ×
+            </button>
+          )}
+
+          <button style={searchButtonStyle} onClick={handleUpdateClick}> {/* <-- ADD onClick HANDLER HERE */}
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </button>
+        </div>
+        
         <button 
           className="filter-button" 
           onClick={() => setIsFilterPanelVisible(prev => !prev)}
@@ -61,14 +87,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
         {/* --- FILTER PANEL --- */}
         <div className={`filter-panel ${isFilterPanelVisible ? 'open' : ''}`}>
           <div style={{display: 'flex', gap: '10px', width: '100%'}}>
-            <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)} style={selectStyle}>
-              {availableLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-            </select>
-            <select value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value as any)} style={selectStyle}>
-              {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
-            </select>
-          </div>
-          <button style={updateButtonStyle}>
+
+          <select value={stagedLanguageFilter} onChange={(e) => setStagedLanguageFilter(e.target.value)} style={selectStyle}>
+            {availableLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+          </select>
+          <select value={stagedPeriodFilter} onChange={(e) => setStagedPeriodFilter(e.target.value as any)} style={selectStyle}>
+            {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
+          </select>
+        </div>
+        <button style={updateButtonStyle} onClick={handleUpdateClick}>
             Güncelle
           </button>
         </div>
@@ -136,14 +163,52 @@ const headerStyle: React.CSSProperties = {
   color: 'white',
 };
 
+const searchContainerStyle: React.CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  width: '100%',
+  marginBottom: '10px',
+};
+
 const searchInputStyle: React.CSSProperties = {
   width: '100%',
   padding: '12px',
+  paddingRight: '70px',
   boxSizing: 'border-box',
   border: '1px solid #ccc',
   borderRadius: '4px',
-  marginBottom: '10px',
 };
+
+const clearButtonStyle: React.CSSProperties = {
+  position: 'absolute',
+  right: '50px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  background: 'none',
+  border: 'none',
+  fontSize: '20px',
+  cursor: 'pointer',
+  color: '#999',
+  padding: '0 5px',
+};
+
+const searchButtonStyle: React.CSSProperties = {
+  position: 'absolute',
+  right: '0px',
+  top: '0px',
+  height: '100%',
+  width: '50px',
+  background: '#e9ecef',
+  border: '1px solid #ccc',
+  borderTopRightRadius: '4px',
+  borderBottomRightRadius: '4px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#666',
+};
+
 const filterContainerStyle: React.CSSProperties = {
   display: 'flex',
   gap: '10px'
@@ -165,7 +230,7 @@ const wordItemStyle: React.CSSProperties = {
   cursor: 'pointer',
   display: 'flex',
   flexDirection: 'column',
-  transition: 'background-color 0.2s ease, border-left 0.2s ease',
+  transition: 'background-color 0.2s ease',
   borderRadius: '8px',
   marginBottom: '5px',
   borderLeft: '4px solid transparent', 

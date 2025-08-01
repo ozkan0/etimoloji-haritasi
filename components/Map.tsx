@@ -45,9 +45,6 @@ interface MapProps {
 
 const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, onMapClick, activePopupData, onPopupPositionUpdate }) => {
   const { theme } = useTheme(); 
-  console.log("Jawg Token:", process.env.NEXT_PUBLIC_JAWG_TOKEN);
-
-  
   // map boundaries to limit the map view
   const mapBounds: LatLngBoundsExpression = [
     [-40, -60], // Southwest Latitude, Longitude
@@ -74,6 +71,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: '#191a1a' }}
       maxBounds={mapBounds}
       minZoom={4}
+      maxZoom={7}
     >
       
       <PopupPositionUpdater 
