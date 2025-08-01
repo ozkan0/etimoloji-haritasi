@@ -7,8 +7,9 @@ import dynamic from 'next/dynamic';
 import LeftSidebar from '../components/LeftSidebar';
 import RightDetailPanel from '../components/RightDetailPanel';
 import CustomPopup, { PopupData } from '../components/CustomPopup';
-import { Word, Language, WordOnMap } from '../types';
 import ToggleSidebarButton from '../components/ToggleSidebarButton';
+import { Word, Language, WordOnMap } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -20,9 +21,7 @@ interface ToggleSidebarButtonProps {
   onClick: () => void;
 }
 
-
 interface HomeProps {
-  allWords: Word[];
   allLanguages: Language[];
 }
 
@@ -36,38 +35,54 @@ const getRandomCoordinatesInBoundingBox = (boundingBox: [number, number, number,
   return [lat, lng];
 };
 
-const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
+const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
   const [activePopupData, setActivePopupData] = useState<PopupData | null>(null);
+  // --- NEW STATE: To store the words for the sidebar list ---
+  const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
 
   useEffect(() => {
-    if (allLanguages && allLanguages.length > 0) {
-      const initialWords: WordOnMap[] = [];
-      const wordsByLanguage = new Map<string, Word[]>();
-      allWords.forEach(word => {
-        if (!wordsByLanguage.has(word.originLanguage)) {
-          wordsByLanguage.set(word.originLanguage, []);
-        }
-        wordsByLanguage.get(word.originLanguage)!.push(word);
-      });
-      wordsByLanguage.forEach((wordsInLang, languageName) => {
-        const languageData = allLanguages.find(lang => lang.language === languageName);
-        if (!languageData) return;
-        const shuffled = [...wordsInLang].sort(() => 0.5 - Math.random());
-        const selectedWords = shuffled.slice(0, 2);
-        selectedWords.forEach(word => {
-          initialWords.push({
-            ...word,
+    const fetchInitialWords = async () => {
+      setIsLoading(true);
+      
+      const { data: randomWords, error } = await supabase.rpc('get_random_words', { limit_count: 50 });
+
+      if (error) {
+        console.error('Error fetching initial words:', error);
+      } else if (randomWords) {
+        setSidebarWords(randomWords);
+
+        const initialMapWords: WordOnMap[] = [];
+        const wordsByLanguage = new Map<string, Word[]>();
+        
+        randomWords.forEach((word: Word) => {
+          if (!wordsByLanguage.has(word.originLanguage)) {
+            wordsByLanguage.set(word.originLanguage, []);
+          }
+          wordsByLanguage.get(word.originLanguage)!.push(word);
+        });
+
+        wordsByLanguage.forEach((wordsInLang, languageName) => {
+          const languageData = allLanguages.find(lang => lang.language === languageName);
+          if (!languageData) return;
+          const selectedWord = wordsInLang[0];
+          initialMapWords.push({
+            ...selectedWord,
             coordinates: getRandomCoordinatesInBoundingBox(languageData.boundingBox),
           });
         });
-      });
-      setWordsOnMap(initialWords);
-    }
-  }, [allWords, allLanguages]);
+        
+        setWordsOnMap(initialMapWords);
+      }
+      setIsLoading(false);
+    };
+    fetchInitialWords();
+  }, [allLanguages]);
 
   const toggleSidebar = () => {
     setIsSidebarVisible(prev => !prev);
@@ -122,11 +137,11 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
       
       <LeftSidebar 
-        allWords={allWords} 
+        allWords={sidebarWords}
         onWordSelect={handleWordSelect} 
         isVisible={isSidebarVisible} 
       />
-      
+
       <main style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0 }}>
         <MapComponent 
           wordsOnMap={wordsOnMap} 
@@ -137,6 +152,7 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
           onPopupPositionUpdate={handlePopupPositionUpdate}
         />
       </main>
+
       <CustomPopup 
         data={activePopupData}
         onClose={handleClosePopups}
@@ -145,13 +161,7 @@ const Home: NextPage<HomeProps> = ({ allWords, allLanguages }) => {
           setActivePopupData(null);
         }}
       />
-      <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
-
-      <LeftSidebar 
-        allWords={allWords} 
-        onWordSelect={handleWordSelect} 
-        isVisible={isSidebarVisible} 
-      />
+      
       <RightDetailPanel 
         word={detailPanelWord} 
         onClose={() => setDetailPanelWord(null)} 
@@ -164,15 +174,12 @@ export default Home;
 
 export const getStaticProps: GetStaticProps = async () => {
   const dataDirectory = path.join(process.cwd(), 'data');
-  const wordsFilePath = path.join(dataDirectory, 'words.json');
-  const wordsJsonData = await fs.readFile(wordsFilePath, 'utf8');
-  const allWords: Word[] = JSON.parse(wordsJsonData);
   const languagesFilePath = path.join(dataDirectory, 'languages.json');
   const languagesJsonData = await fs.readFile(languagesFilePath, 'utf8');
   const allLanguages: Language[] = JSON.parse(languagesJsonData);
+
   return {
     props: {
-      allWords,
       allLanguages,
     },
   };
