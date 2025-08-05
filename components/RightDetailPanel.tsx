@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Word } from '../types';
+import { Word } from '../types/types';
 
 interface RightDetailPanelProps {
   word: Word | null;
@@ -44,6 +44,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) =>
             <button onClick={handleClose} style={closeButtonStyle}>×</button>
           </div>
           <div style={panelBodyStyle}>
+            <p><strong>Anlamı:</strong> {word.meaning}</p>
             <p><strong>Köken Dili:</strong> {word.originLanguage}</p>
             <p><strong>Dönem:</strong> {word.period}</p>
             <p><strong>Örnek Cümle:</strong> "{word.exampleSentence}"</p>
@@ -78,6 +79,8 @@ const panelStyle: React.CSSProperties = {
   color: 'var(--sidebar-text-primary)',
   display: 'flex',
   flexDirection: 'column',
+  borderTopLeftRadius: '14px',
+  borderBottomLeftRadius: '12px',
 };
 
 const panelHeaderStyle: React.CSSProperties = {
@@ -87,6 +90,7 @@ const panelHeaderStyle: React.CSSProperties = {
   padding: '15px',
   backgroundColor: 'var(--detailspanel-header-bg)',
   color: 'white',
+  borderTopLeftRadius: '14px',
 };
 
 const closeButtonStyle: React.CSSProperties = {

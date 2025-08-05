@@ -8,8 +8,9 @@ import LeftSidebar from '../components/LeftSidebar';
 import RightDetailPanel from '../components/RightDetailPanel';
 import CustomPopup, { PopupData } from '../components/CustomPopup';
 import ToggleSidebarButton from '../components/ToggleSidebarButton';
-import { Word, Language, WordOnMap } from '../types';
+import { Word, Language, WordOnMap } from '../types/types';
 import { supabase } from '../lib/supabaseClient';
+import pointInPolygon from 'point-in-polygon';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -24,16 +25,43 @@ interface ToggleSidebarButtonProps {
 interface HomeProps {
   allLanguages: Language[];
 }
+const getRandomCoordinatesInBoundingBox = (language: Language): [number, number] => {
+  const { boundingBox, polygon } = language;
 
-const getRandomCoordinatesInBoundingBox = (boundingBox: [number, number, number, number]): [number, number] => {
-  if (!boundingBox || !Array.isArray(boundingBox) || boundingBox.length !== 4 || boundingBox.some(isNaN)) {
-    return [39.9334, 32.8597]; 
+  if (!boundingBox || !polygon || polygon.length === 0) {
+    console.error("Missing boundingBox or polygon for language:", language.language);
+
+    if (boundingBox) {
+        const [minLat, minLng, maxLat, maxLng] = boundingBox;
+        const lat = Math.random() * (maxLat - minLat) + minLat;
+        const lng = Math.random() * (maxLng - minLng) + minLng;
+        return [lat, lng];
+    }
+    return [39.9334, 32.8597];
   }
-  const [minLat, minLng, maxLat, maxLng] = boundingBox;
-  const lat = Math.random() * (maxLat - minLat) + minLat;
-  const lng = Math.random() * (maxLng - minLng) + minLng;
-  return [lat, lng];
+
+  let randomPoint: [number, number];
+  let isInside = false;
+  let attempts = 0; 
+
+  do {
+    const [minLat, minLng, maxLat, maxLng] = boundingBox;
+    const lat = Math.random() * (maxLat - minLat) + minLat;
+    const lng = Math.random() * (maxLng - minLng) + minLng;
+    randomPoint = [lng, lat]; 
+
+    isInside = pointInPolygon(randomPoint, polygon[0]);
+
+    attempts++;
+  } while (!isInside && attempts < 100);
+
+  if (!isInside) {
+    console.warn("Could not find a point inside the polygon for:", language.language, "using last attempt.");
+  }
+
+  return [randomPoint[1], randomPoint[0]]; 
 };
+
 
 const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -41,7 +69,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
   const [activePopupData, setActivePopupData] = useState<PopupData | null>(null);
-  // --- NEW STATE: To store the words for the sidebar list ---
+  
   const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -73,7 +101,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
           const selectedWord = wordsInLang[0];
           initialMapWords.push({
             ...selectedWord,
-            coordinates: getRandomCoordinatesInBoundingBox(languageData.boundingBox),
+            coordinates: getRandomCoordinatesInBoundingBox(languageData),
           });
         });
         
@@ -100,7 +128,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     if (existingWord) {
       setMapFlyToTarget(existingWord.coordinates);
     } else {
-      const newCoordinates = getRandomCoordinatesInBoundingBox(languageData.boundingBox);
+      const newCoordinates = getRandomCoordinatesInBoundingBox(languageData);
       const newWordOnMap: WordOnMap = { ...selectedWord, coordinates: newCoordinates };
       setWordsOnMap(prevWords => [...prevWords, newWordOnMap]);
       setMapFlyToTarget(newCoordinates);
