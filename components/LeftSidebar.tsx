@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Word } from '../types';
+import { Word } from '../types/types';
 import { useTheme } from '../context/ThemeContext';
 import ThemeSwitch from './ThemeSwitch';
 
@@ -132,7 +132,7 @@ const sidebarStyle: React.CSSProperties = {
   left: 0,
   zIndex: 1001,
   transition: 'transform 0.3s ease-in-out',
-  boxShadow: '3px 0px 15px rgba(0,0,0,0.1)',
+  boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)',
   width: '350px',
   height: '100vh',
   backgroundColor: 'var(--sidebar-main-bg)',
@@ -141,6 +141,8 @@ const sidebarStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   fontFamily: 'sans-serif',
+  borderTopRightRadius: '12px',
+  borderBottomRightRadius: '12px',
 };
 
 const updateButtonStyle: React.CSSProperties = {
@@ -161,6 +163,7 @@ const headerStyle: React.CSSProperties = {
   padding: '15px 20px',
   backgroundColor: 'var(--sidebar-header-bg)',
   color: 'white',
+  borderTopRightRadius: '12px',
 };
 
 const searchContainerStyle: React.CSSProperties = {

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L, { LatLngBoundsExpression } from 'leaflet';
-import { Word, WordOnMap } from '../types';
+import { Word, WordOnMap } from '../types/types';
 import { PopupData } from './CustomPopup';
 import { useTheme } from '../context/ThemeContext';
 
@@ -9,6 +9,43 @@ const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
   useMapEvents({ click: () => onClick() });
   return null;
 };
+
+const MarkerSizeUpdater = () => {
+  const map = useMap();
+  useEffect(() => {
+
+    const updateMarkerSizes = () => {
+      const zoom = map.getZoom();
+      const markers = document.querySelectorAll('.word-marker-icon');
+
+      markers.forEach((marker) => {
+        const el = marker as HTMLElement;
+        el.style.fontSize = '';
+        el.style.padding = '2px 5px';
+        el.style.fontWeight = '600';
+        el.style.backgroundColor = "#C3E0E5";
+
+        if (zoom == 5) {
+          el.style.fontSize = '13px';
+        } else if (zoom === 4) {
+          el.style.fontSize = '12px';
+        } else if (zoom === 3) {
+          el.style.fontSize = '10px';
+        }
+      });
+    };
+    updateMarkerSizes();
+
+    map.on('zoomend', updateMarkerSizes);
+
+    return () => {
+      map.off('zoomend', updateMarkerSizes);
+    };
+  }, [map]);
+  return null;
+};
+
+
 const PopupPositionUpdater = ({ activePopup, onUpdate }: { activePopup: PopupData | null; onUpdate: (newPosition: { x: number, y: number }) => void; }) => {
   const map = useMap();
   
@@ -70,8 +107,8 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: '#191a1a' }}
       maxBounds={mapBounds}
-      minZoom={4}
-      maxZoom={7}
+      minZoom={3}
+      maxZoom={8}
     >
       
       <PopupPositionUpdater 
@@ -112,6 +149,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
           />
         );
       })}
+      <MarkerSizeUpdater />
     </MapContainer>
   );
 };

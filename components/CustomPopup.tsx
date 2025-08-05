@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Word } from '../types';
+import { Word } from '../types/types';
 
 export interface PopupData {
   word: Word;

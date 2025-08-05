@@ -60,6 +60,7 @@ html, body {
 /* --- COMPONENTS --- */
 
 .word-marker-icon {
+  /*#C3E0E5*/
   background-color: #C3E0E5;
   border: 1px solid #666;
   border-radius: 5px;
@@ -72,6 +73,7 @@ html, body {
   white-space: nowrap;
   cursor: pointer;
   transform: translate(-50%, -115%);
+  transition: font-size 0.2s ease, padding 0.2s ease;
 }
 
 
