@@ -65,6 +65,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
             value={stagedSearchTerm}
             onChange={(e) => setStagedSearchTerm(e.target.value)}
             style={searchInputStyle}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleUpdateClick();
+              }
+            }}
           />
           
           {stagedSearchTerm && (
@@ -95,7 +100,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
             {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
           </select>
         </div>
-        <button style={updateButtonStyle} onClick={handleUpdateClick}>
+          <button className="action-button" onClick={handleUpdateClick}>
             Güncelle
           </button>
         </div>
@@ -145,18 +150,6 @@ const sidebarStyle: React.CSSProperties = {
   borderBottomRightRadius: '12px',
 };
 
-const updateButtonStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px',
-  backgroundColor: '#0094ff',
-  color: 'white',
-  border: 'none',
-  borderRadius: '4px',
-  fontSize: '1rem',
-  fontWeight: 600,
-  cursor: 'pointer',
-  marginTop: '10px',
-};
 
 
 const headerStyle: React.CSSProperties = {
