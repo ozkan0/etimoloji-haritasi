@@ -20,9 +20,9 @@ const MarkerSizeUpdater = () => {
 
       markers.forEach((marker) => {
         const el = marker as HTMLElement;
-        el.style.fontSize = '';
-        el.style.padding = '2px 5px';
-        el.style.fontWeight = '600';
+        el.style.fontSize = '12px';
+        el.style.padding = '3px 5px';
+        el.style.fontWeight = '800';
         el.style.backgroundColor = "#C3E0E5";
 
         if (zoom == 5) {
@@ -30,7 +30,7 @@ const MarkerSizeUpdater = () => {
         } else if (zoom === 4) {
           el.style.fontSize = '12px';
         } else if (zoom === 3) {
-          el.style.fontSize = '10px';
+          el.style.fontSize = '11px';
         }
       });
     };
@@ -84,7 +84,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
   const { theme } = useTheme(); 
   // map boundaries to limit the map view
   const mapBounds: LatLngBoundsExpression = [
-    [-40, -60], // Southwest Latitude, Longitude
+    [-40, -80], // Southwest Latitude, Longitude
     [75, 170],  // Northeast Latitude, Longitude
   ];
   const lightMapUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
@@ -108,7 +108,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: '#191a1a' }}
       maxBounds={mapBounds}
       minZoom={3}
-      maxZoom={8}
+      maxZoom={7}
     >
       
       <PopupPositionUpdater 
