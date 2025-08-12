@@ -11,6 +11,9 @@ import ToggleSidebarButton from '../components/ToggleSidebarButton';
 import { Word, Language, WordOnMap } from '../types/types';
 import { supabase } from '../lib/supabaseClient';
 import pointInPolygon from 'point-in-polygon';
+import NewsTicker from '../components/NewsTicker';
+import { useTheme } from '../context/ThemeContext';
+import ThemeSwitch from '../components/ThemeSwitch';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -72,6 +75,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   
   const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
 
 
   useEffect(() => {
@@ -80,11 +84,22 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       
       const { data: randomWords, error } = await supabase.rpc('get_random_words', { limit_count: 50 });
 
-      if (error) {
+      // --- NEW: Fetch news items ---
+      const { data: newsData, error: newsError } = await supabase
+        .from('news') // Assume your table is named 'news'
+        .select('id, text'); // Select the id and text columns
+      
+      
+        if (error) {
         console.error('Error fetching initial words:', error);
       } else if (randomWords) {
         setSidebarWords(randomWords);
 
+      if (newsError) {
+        console.error('Error fetching news:', newsError);
+      } else {
+        setNewsItems(newsData || []);
+      }
         const initialMapWords: WordOnMap[] = [];
         const wordsByLanguage = new Map<string, Word[]>();
         
@@ -180,6 +195,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
           onPopupPositionUpdate={handlePopupPositionUpdate}
         />
       </main>
+      <NewsTicker newsItems={newsItems} />
+      <ThemeSwitch />
 
       <CustomPopup 
         data={activePopupData}

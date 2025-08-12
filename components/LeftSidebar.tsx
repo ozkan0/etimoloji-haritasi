@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Word } from '../types/types';
-import { useTheme } from '../context/ThemeContext';
-import ThemeSwitch from './ThemeSwitch';
 
 interface LeftSidebarProps {
   allWords: Word[];
@@ -51,7 +49,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
       {/* --- HEADER SECTION --- */}
       <div style={headerStyle} className="sidebar-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '15px' }}>
-          <ThemeSwitch />
           <div style={{flex: 1, textAlign: 'center'}}>
             <h2 style={{margin: 0, marginLeft:20, display: 'inline-block'}}>Etimoloji Haritası</h2>
           </div>
@@ -133,30 +130,27 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
 
 const sidebarStyle: React.CSSProperties = {
   position: 'absolute',
-  top: 0,
+  top: '40px',
   left: 0,
+  height: 'calc(100vh - 20px)',
   zIndex: 1001,
   transition: 'transform 0.3s ease-in-out',
   boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)',
   width: '350px',
-  height: '100vh',
   backgroundColor: 'var(--sidebar-main-bg)',
-  borderRight: '1px solid var(--sidebar-border-color)',
+  border: '1px solid var(--sidebar-border-color)',
   color: 'var(--sidebar-text-primary)',
   display: 'flex',
   flexDirection: 'column',
   fontFamily: 'sans-serif',
-  borderTopRightRadius: '12px',
-  borderBottomRightRadius: '12px',
+  borderRadius: '22px',
+  overflow: 'hidden',
 };
-
-
 
 const headerStyle: React.CSSProperties = {
   padding: '15px 20px',
   backgroundColor: 'var(--sidebar-header-bg)',
   color: 'white',
-  borderTopRightRadius: '12px',
 };
 
 const searchContainerStyle: React.CSSProperties = {

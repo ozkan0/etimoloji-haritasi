@@ -6,14 +6,14 @@ const ThemeSwitch = () => {
 
   const switchStyle: React.CSSProperties = {
     position: 'absolute',
-    top: '10px',
-    left: '10%',
+    top: '2px',
+    left: '6%',
     transform: 'translateX(-50%)',
-    zIndex: 1001,
+    zIndex: 1000,
     cursor: 'pointer',
     background: 'var(--sidebar-header-bg)',
     border: '1px solid #ccc',
-    borderRadius: '50px',
+    borderRadius: '12px',
     padding: '8px',
     fontSize: '1.2rem',
     lineHeight: 1,

@@ -10,7 +10,7 @@ html, body {
 
 /* Light Theme (Default) */
 :root {
-  --sidebar-main-bg: #f8f9fa;
+  --sidebar-main-bg: #e3f7ff;
   --sidebar-header-bg: #5885AF;
   --sidebar-border-color: #dee2e6;
   --sidebar-text-primary: #212529;
@@ -198,7 +198,7 @@ html, body {
 }
 /* scrollbar */
 .sidebar-main ul::-webkit-scrollbar {
-  width: 8px;
+  width: 16px;
 }
 .sidebar-main ul::-webkit-scrollbar-track {
   background: transparent;
@@ -211,4 +211,46 @@ html, body {
 [data-theme='dark'] .sidebar-main ul::-webkit-scrollbar-thumb {
   background-color: #555;
   border-color: var(--sidebar-main-bg);
+}
+/* --- Loading Screen Styles --- */
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #274472;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  
+  /* --- Animation Properties --- */
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.loading-screen.finished {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loading-screen .loading-content {
+  text-align: center;
+}
+
+.loading-screen h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.loading-screen p {
+  font-size: 1.2rem;
+  margin-top: 10px;
+  opacity: 0.8;
 }

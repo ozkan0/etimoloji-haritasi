@@ -76,7 +76,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) =>
   
   const headerWithCursorStyle: React.CSSProperties = {
     ...panelHeaderStyle,
-    cursor: 'pointer', // Make the entire header look clickable
+    cursor: 'pointer',
   };
 
   return (
@@ -148,15 +148,15 @@ const panelStyle: React.CSSProperties = {
   transition: 'opacity 0.2s ease-in-out, transform 0.3s ease-in-out',
 
   width: '350px',
-  height: 'calc(100vh - 40px)', 
+  height: 'calc(100vh - 16x)', 
   backgroundColor: 'var(--sidebar-main-bg)',
   borderLeft: '1px solid var(--sidebar-border-color)',
   borderTop: '1px solid var(--sidebar-border-color)',
   color: 'var(--sidebar-text-primary)',
   display: 'flex',
   flexDirection: 'column',
-  borderTopLeftRadius: '14px',
-  borderBottomLeftRadius: '14px',
+  borderTopLeftRadius: '22px',
+  borderTopRightRadius: '22px',
   overflow: 'hidden',
 };
 
@@ -169,7 +169,7 @@ const panelHeaderStyle: React.CSSProperties = {
   color: 'white',
   borderTopLeftRadius: '14px',
   cursor: 'pointer',
-  height: '75px',
+  height: '50px',
   flexShrink: 0,
 };
 
@@ -186,7 +186,7 @@ const customSeparatorStyle: React.CSSProperties = {
   margin: '5px auto',
   height: '3px',
   backgroundColor: 'var(--detailspanel-header-bg)',
-  backgroundImage: 'linear-gradient(to right, #bc692dff 50%, transparent 50%)',
+  backgroundImage: 'linear-gradient(to right, #5e83baff 50%, transparent 50%)',
   backgroundSize: '15px 3px',
   backgroundRepeat: 'repeat-x',
   border: 'none',
