@@ -14,6 +14,8 @@ import pointInPolygon from 'point-in-polygon';
 import NewsTicker from '../components/NewsTicker';
 import { useTheme } from '../context/ThemeContext';
 import ThemeSwitch from '../components/ThemeSwitch';
+import AboutButton from '../components/AboutButton';
+import AboutPanel from '../components/AboutPanel';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -76,50 +78,49 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
+  const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
 
 
   useEffect(() => {
     const fetchInitialWords = async () => {
       setIsLoading(true);
       
-      const { data: randomWords, error } = await supabase.rpc('get_random_words', { limit_count: 50 });
+      const { data: randomWords, error } = await supabase.rpc('get_random_words', { limit_count: 200 });
 
-      // --- NEW: Fetch news items ---
+      // newsticker data fetch
       const { data: newsData, error: newsError } = await supabase
-        .from('news') // Assume your table is named 'news'
-        .select('id, text'); // Select the id and text columns
-      
-      
-        if (error) {
-        console.error('Error fetching initial words:', error);
-      } else if (randomWords) {
-        setSidebarWords(randomWords);
-
+        .from('news')
+        .select('id, text');
+        
       if (newsError) {
         console.error('Error fetching news:', newsError);
       } else {
         setNewsItems(newsData || []);
-      }
-        const initialMapWords: WordOnMap[] = [];
-        const wordsByLanguage = new Map<string, Word[]>();
+      }if (error) {
+        console.error('Error fetching initial words:', error);
+      } else if (randomWords) {
+        setSidebarWords(randomWords);
         
-        randomWords.forEach((word: Word) => {
-          if (!wordsByLanguage.has(word.originLanguage)) {
-            wordsByLanguage.set(word.originLanguage, []);
-          }
-          wordsByLanguage.get(word.originLanguage)!.push(word);
-        });
+        if (newsError) {
+          console.error('Error fetching news:', newsError);
+        } else {
+          setNewsItems(newsData || []);
+        }
+        const INITIAL_MAP_WORD_COUNT = 35;
+        const wordsForMap = randomWords.slice(0, INITIAL_MAP_WORD_COUNT);
 
-        wordsByLanguage.forEach((wordsInLang, languageName) => {
-          const languageData = allLanguages.find(lang => lang.language === languageName);
-          if (!languageData) return;
-          const selectedWord = wordsInLang[0];
-          initialMapWords.push({
-            ...selectedWord,
+        const initialMapWords: WordOnMap[] = wordsForMap.map((word: Word) => {
+          const languageData = allLanguages.find((lang: Language) => lang.language === word.originLanguage);
+          if (!languageData) {
+            return null;
+          }
+          
+          return {
+            ...word,
             coordinates: getRandomCoordinatesInBoundingBox(languageData),
-          });
-        });
-        
+          };
+        }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
+
         setWordsOnMap(initialMapWords);
       }
       setIsLoading(false);
@@ -168,6 +169,9 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       return { ...prevData, position: newPosition };
     });
   };
+  const toggleAboutPanel = () => {
+    setIsAboutPanelVisible(prev => !prev);
+  };
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>
@@ -177,6 +181,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         {/* <link rel="icon" href="/favicon.ico" /> */}
       </Head>
 
+      <AboutButton onClick={toggleAboutPanel} />
+      <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
       
       <LeftSidebar 

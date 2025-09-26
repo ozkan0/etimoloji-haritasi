@@ -7,7 +7,7 @@ const ThemeSwitch = () => {
   const switchStyle: React.CSSProperties = {
     position: 'absolute',
     top: '1px',
-    right: '2%',
+    right: '18px',
     transform: 'translateX(-50%)',
     zIndex: 1000,
     cursor: 'pointer',
