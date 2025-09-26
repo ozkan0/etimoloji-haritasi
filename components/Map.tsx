@@ -108,7 +108,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: '#191a1a' }}
       maxBounds={mapBounds}
       minZoom={3}
-      maxZoom={7}
+      maxZoom={8}
     >
       
       <PopupPositionUpdater 

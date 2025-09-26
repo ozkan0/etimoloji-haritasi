@@ -35,6 +35,9 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
   const textStyle: React.CSSProperties = {
     transition: 'opacity 0.3s ease-in-out',
     opacity: isVisible ? 1 : 0,
+    textAlign: 'center',
+    width: '100%',
+    margin: 0,
   };
 
   return (
@@ -57,7 +60,7 @@ const tickerContainerStyle: React.CSSProperties = {
   height: '32px',
   display: 'flex',
   alignItems: 'center',
-  maxWidth: '800px',
+  maxWidth: '50%',
   backgroundColor: '#004749ff',
   color: 'white',
   borderRadius: '18px',
