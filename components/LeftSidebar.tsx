@@ -130,9 +130,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
 
 const sidebarStyle: React.CSSProperties = {
   position: 'absolute',
-  top: 0,
-  left: 0,
-  height: 'calc(100vh - 20px)',
+  height: '100vh',
   zIndex: 1001,
   transition: 'transform 0.3s ease-in-out',
   boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)',

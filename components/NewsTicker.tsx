@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 
+// --- COMPONENT: NewsTicker ---
+// still beta
 interface NewsTickerProps {
   newsItems: { id: number; text: string }[];
 }
-// --- COMPONENT: NewsTicker ---
-// under construction
 const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);

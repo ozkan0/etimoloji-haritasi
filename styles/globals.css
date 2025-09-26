@@ -178,8 +178,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;  /* Set a fixed width */
-  height: 32px; /* Set a fixed height */
+  width: 32px;
+  height: 32px;
   background-color: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 50%;
