@@ -67,13 +67,13 @@ const AboutPanel: React.FC<AboutPanelProps> = ({ isVisible, onClose }) => {
         </div>
         <div style={bodyStyle}> 
           <p>Proje hakkında tüm bilgiler için github adresi: <a href='https://github.com/ozkan0/etimoloji-haritasi'> https://github.com/ozkan0/etimoloji-haritasi </a></p>
-          <p>Harita üzerinde beliren kelimeler artırılarak 35 ile sınırlandırılmıştır.</p>
-          <p>Kelime detay penceresinden kelimenin kökeni, anlamı, kullanımı ve diğer dillerdeki benzer kelimelere erişilebilir. Bu sekme başlığa tıklanarak aşağı indirilebilir veya kapatılabilir.</p>
-          <p>Yan menüden tüm kelimelere erişilebilir. Kelimeler alfabetik sıralanmıştır.</p>
+          <p>Harita üzerinde beliren kelimelerin tam koordinatları rastgeledir. Haritadaki kelime sayısı sınırı 35'e artırılmıştır. Her yenilemede kelimeler ve yerleri, köken ülkeleri üzerinde rastgele seçilip yerleştirilir.</p>
+          <p></p>
+          <p>NewsTicker, sitenin canlılığını artıran bir komponenttir</p>
           <p>Kelime anlamı datayları artık TDK API aracılığıyla canlı veri çekmektedir.</p>
-          <p>Gelecekte detay paneline ekstra etimolojik veriler, ülke bazında istatistik gibi veriler, ekstra kelime hakkında bilgiler gibi verilerin eklenmesi planlanmıştır.</p>
           <p>Bu site henüz başlangıç versiyonlarındadır. Detayları ve gelişimini github sayfasında takip edebilirsiniz.</p>
-
+          <p>Gelecekte detay paneline ekstra etimolojik veriler, ülke bazında istatistik gibi veriler, ekstra kelime hakkında bilgiler gibi verilerin eklenmesi planlanmıştır. Köken ülkesi ve dilimize giriş dönemine göre tek butonla filtreleme, kökeni tartışmalı kelimeler için farklı kaynak kıyaslamaları için referanslar gibi özellikler eklenecek. Kelime hakkında geribildirim yapılabilmesi için mini form eklenecek.</p>
+          
           <p><strong>Geliştirici:</strong> Ömer Özkan</p>
         </div>
       </div>
@@ -85,7 +85,8 @@ const headerStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: '10px 25px',
+  padding: '0 25px',
+  marginTop: '10px',
   borderBottom: '1px solid var(--sidebar-border-color)',
 };
 

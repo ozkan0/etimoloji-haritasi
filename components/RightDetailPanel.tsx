@@ -12,6 +12,7 @@ interface RightDetailPanelProps {
 const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
 
   const [liveData, setLiveData] = useState<LiveTdkData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +84,16 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({ word, onClose }) =>
     <div style={dynamicPanelStyle} className="right-panel-main">
       {word && (
         <>
-          <div style={headerWithCursorStyle} className="right-panel-header" onClick={handleHeaderClick}>
+          <div 
+            style={{ 
+              ...headerWithCursorStyle,
+              ...(isHeaderHovered ? panelHeaderHoverStyle : null) 
+            }}
+            className="right-panel-header" 
+            onClick={handleHeaderClick}
+            onMouseEnter={() => setIsHeaderHovered(true)}
+            onMouseLeave={() => setIsHeaderHovered(false)}
+          >
             <h2 style={{margin: 0, flex: 1, fontWeight: 700}}>Detay Paneli</h2>
             <div style={{width: '32px', height: '32px'}} />
             <button onClick={handleClose} className="icon-close-button">&times;</button>
@@ -171,8 +181,12 @@ const panelHeaderStyle: React.CSSProperties = {
   cursor: 'pointer',
   height: '50px',
   flexShrink: 0,
+  transition: 'background-color 0.3s ease',
 };
 
+const panelHeaderHoverStyle: React.CSSProperties = {
+  backgroundColor: 'var(--detailspanel-header-bg-hover)',
+};
 
 const panelBodyStyle: React.CSSProperties = {
   padding: '15px',

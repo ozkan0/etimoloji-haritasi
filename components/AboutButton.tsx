@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const AboutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const { theme } = useTheme();
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const buttonStyle: React.CSSProperties = {
     position: 'absolute',
@@ -18,10 +19,9 @@ const AboutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-
     width: '38px',
     height: '38px',
-    color: 'white',
+    color: 'blue',
     fontSize: '22px',
     fontWeight: 'bold',
     fontFamily: 'Georgia, serif',
@@ -32,12 +32,25 @@ const AboutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
     ...buttonStyle,
     backgroundColor: 'var(--sidebar-header-bg)',
     borderColor: '#555',
+    color: 'cyan',
+  };
+
+  const buttonHoveredStyle: React.CSSProperties = {
+    backgroundColor: 'var(--main-buttons-hover-bg)',
+    borderColor: '#888',
+    color: theme === 'light' ? 'white' : 'lightcyan',
   };
 
   return (
     <button 
       onClick={onClick} 
-      style={theme === 'light' ? buttonStyle : darkButtonStyle}
+      style={{ 
+        ...(theme === 'light' ? buttonStyle : darkButtonStyle),
+        ...(isHovered ? buttonHoveredStyle : {}),
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      title="Proje hakkında"
       aria-label="Proje hakkında"
     >
       <i>i</i>

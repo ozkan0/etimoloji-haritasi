@@ -97,6 +97,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
             {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
           </select>
         </div>
+          {/* update button needs some style */}
           <button className="action-button" onClick={handleUpdateClick}>
             Güncelle
           </button>
@@ -174,9 +175,9 @@ const clearButtonStyle: React.CSSProperties = {
   transform: 'translateY(-50%)',
   background: 'none',
   border: 'none',
-  fontSize: '20px',
+  fontSize: '25px',
   cursor: 'pointer',
-  color: '#999',
+  color: '#ff5b5bff',
   padding: '0 5px',
 };
 

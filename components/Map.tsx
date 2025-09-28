@@ -1,5 +1,5 @@
 import React, {useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L, { LatLngBoundsExpression } from 'leaflet';
 import { Word, WordOnMap } from '../types/types';
 import { PopupData } from './CustomPopup';
@@ -109,6 +109,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       maxBounds={mapBounds}
       minZoom={3}
       maxZoom={8}
+      zoomControl={false}
     >
       
       <PopupPositionUpdater 
@@ -150,6 +151,7 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
         );
       })}
       <MarkerSizeUpdater />
+      <ZoomControl position="topright" />
     </MapContainer>
   );
 };
