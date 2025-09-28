@@ -7,7 +7,7 @@ Bu proje, Türkçedeki kelimelerin etimolojik kökenlerini interaktif bir dünya
 
 <img width="1920" height="956" alt="image" src="https://github.com/user-attachments/assets/1744c98f-911b-49c2-bbe8-002aeec25c0f" />
 
-Siteye ulaşmak için:    https://etimoloji-haritasi.vercel.app/
+Canlı demo (vercel):    https://etimoloji-haritasi.vercel.app/
 ## Proje Hakkında
 
 Etimoloji Haritası, Türkçe kelimelerin kelime kökenlerini karşılaştırılabilir kaynaklarla, analitik verilerle pratik ve interaktif bir arayüzde sunmayı hedefler. Harita üzerinde kelimelerin dağılımı; merakı, öğrenme ve araştırma verimliliğini artırır.
@@ -73,7 +73,6 @@ Bu proje aktif olarak geliştirilmektedir. Gelecekte eklenmesi planlanan bazı �
 *   **Kullanıcı Katkısı:** Kullanıcıların yeni kelime önermesi veya mevcut verilerde düzeltme talep etmesi için bir form sistemi.
 *   **Gelişmiş Görselleştirmeler:** Kelime detayları panelinde, kelimenin kullanım sıklığı gibi verileri gösteren basit grafikler eklenmesi.
 *   **URL ile Durum Paylaşımı:** Belirli bir kelime seçiliyken veya bir filtre uygulanmışken, o anki görünümün URL üzerinden paylaşılabilmesi.
-*   
 *   ✅ **Karanlık/Aydınlık Mod:** Kullanıcıların tercihine göre arayüz temasını değiştirebilmesi için bir switch.
 *   ✅ **Veritabanı Entegrasyonu:** Proje büyüdükçe, kelime verilerini yönetmek için JSON dosyaları yerine Supabase veya Firebase gibi bir veritabanı çözümüne geçilmesi.
 
