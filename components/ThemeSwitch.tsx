@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const ThemeSwitch = () => {
   const { theme, toggleTheme } = useTheme();
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const switchStyle: React.CSSProperties = {
     position: 'absolute',
@@ -28,11 +29,20 @@ const ThemeSwitch = () => {
     backgroundColor: 'var(--sidebar-header-bg)',
     borderColor: '#555',
   };
+  const switchHoveredStyle: React.CSSProperties = {
+    backgroundColor: 'var(--main-buttons-hover-bg)',
+    borderColor: '#888',
+  };
 
   return (
     <button 
       onClick={toggleTheme} 
-      style={theme === 'light' ? switchStyle : darkSwitchStyle}
+      style={{
+        ...(theme === 'light' ? switchStyle : darkSwitchStyle),
+        ...(isHovered ? switchHoveredStyle : {}),
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       aria-label="Toggle theme"
     >
       {theme === 'light' ? '🌙' : '☀️'}

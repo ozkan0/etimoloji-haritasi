@@ -10,6 +10,8 @@ html, body {
 
 /* Light Theme (Default) */
 :root {
+  /* we need darker white for main bg */
+
   --sidebar-main-bg: #e3f7ff;
   --sidebar-header-bg: #5885AF;
   --sidebar-border-color: #dee2e6;
@@ -17,6 +19,9 @@ html, body {
   --sidebar-text-secondary: #6c757d;
   --sidebar-item-hover-bg: #e9ecef;
   --detailspanel-header-bg: #0094ff;
+  --detailspanel-header-bg-hover: #007acc;
+
+  /* Buttons */
   --main-buttons-bg: #5885AF;
   --main-buttons-hover-bg: #4a6d8c;
 
@@ -31,17 +36,20 @@ html, body {
   --popup-button-hover-bg: #007acc;
 }
 
-/* Dark Theme */
+/* Dark Theme (Default) */
 [data-theme='dark'] {
-  --sidebar-main-bg: #3e3e3e;
+  --sidebar-main-bg: #212934;
   --sidebar-header-bg: #274472;
   --sidebar-border-color: #424242;
   --sidebar-text-primary: #f5f5f5;
   --sidebar-text-secondary: #bebebe;
-  --sidebar-item-hover-bg: #333;
+  --sidebar-item-hover-bg: #303849;
+  --detailspanel-header-bg: #077691;
+  --detailspanel-header-bg-hover: #055f7a;
+  
+  /* Buttons */
   --main-buttons-bg: #274472;
   --main-buttons-hover-bg: #1a2a4d;
-  --detailspanel-header-bg: #077691;
 
   /* Popups */
   --popup-background: #2d2d2d;
@@ -178,6 +186,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  right:4%;
+  position: absolute;
   width: 32px;
   height: 32px;
   background-color: rgba(255, 255, 255, 0.2);
@@ -253,4 +263,7 @@ html, body {
   font-size: 1.2rem;
   margin-top: 10px;
   opacity: 0.8;
+}
+.leaflet-top.leaflet-right .leaflet-control-zoom {
+  margin-top: 45px;
 }

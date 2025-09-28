@@ -20,9 +20,9 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
       setTimeout(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % newsItems.length);
         setIsVisible(true);
-      }, 300);
+      }, 500);
 
-    }, 10000);
+    }, 8000);
 
     return () => clearInterval(intervalId);
   }, [newsItems]);
@@ -32,7 +32,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
   }
 
   const textStyle: React.CSSProperties = {
-    transition: 'opacity 0.3s ease-in-out',
+    transition: 'opacity 0.5s ease-in-out',
     opacity: isVisible ? 1 : 0,
     textAlign: 'center',
     width: '100%',
@@ -64,7 +64,6 @@ const tickerContainerStyle: React.CSSProperties = {
   color: 'white',
   borderRadius: '18px',
   border: '1px solid rgba(255, 255, 255, 0.2)',
-  padding: '0 0',
   textAlign: 'center',
   fontFamily: '--font-lora',
   fontSize: '16px',
