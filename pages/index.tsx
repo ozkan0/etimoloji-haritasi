@@ -12,7 +12,6 @@ import { Word, Language, WordOnMap } from '../types/types';
 import { supabase } from '../lib/supabaseClient';
 import pointInPolygon from 'point-in-polygon';
 import NewsTicker from '../components/NewsTicker';
-import { useTheme } from '../context/ThemeContext';
 import ThemeSwitch from '../components/ThemeSwitch';
 import AboutButton from '../components/AboutButton';
 import AboutPanel from '../components/AboutPanel';
@@ -22,14 +21,10 @@ const MapComponent = dynamic(() => import('../components/Map'), {
   loading: () => <p style={{ flex: 1, textAlign: 'center', alignSelf: 'center' }}>Harita Yükleniyor...</p>,
 });
 
-interface ToggleSidebarButtonProps {
-  isVisible: boolean;
-  onClick: () => void;
-}
-
 interface HomeProps {
   allLanguages: Language[];
 }
+
 const getRandomCoordinatesInBoundingBox = (language: Language): [number, number] => {
   const { boundingBox, polygon } = language;
 
@@ -96,16 +91,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         console.error('Error fetching news:', newsError);
       } else {
         setNewsItems(newsData || []);
-      }if (error) {
+      }
+      
+      if (error) {
         console.error('Error fetching initial words:', error);
       } else if (randomWords) {
         setSidebarWords(randomWords);
         
-        if (newsError) {
-          console.error('Error fetching news:', newsError);
-        } else {
-          setNewsItems(newsData || []);
-        }
         const INITIAL_MAP_WORD_COUNT = 35;
         const wordsForMap = randomWords.slice(0, INITIAL_MAP_WORD_COUNT);
 
@@ -137,9 +129,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     if (!languageData || !languageData.boundingBox) {
       return;
     }
-    if (detailPanelWord) {
-      setDetailPanelWord(selectedWord);
-    }
+    
+    // --- DEĞİŞİKLİK BURADA ---
+    // Eskiden sadece "if (detailPanelWord)" varken çalışıyordu.
+    // Artık her tıklamada paneli açıyoruz/güncelliyoruz.
+    setDetailPanelWord(selectedWord);
+    // -------------------------
+
     const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
     if (existingWord) {
       setMapFlyToTarget(existingWord.coordinates);
@@ -178,7 +174,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       <Head>
         <title>Etimoloji Haritası</title>
         <meta name="description" content="Türkçe kelimelerin etimolojik köken haritası" />
-        {/* <link rel="icon" href="/favicon.ico" /> */}
       </Head>
 
       <AboutButton onClick={toggleAboutPanel} />

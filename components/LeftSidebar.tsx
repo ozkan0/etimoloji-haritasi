@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Word } from '../types/types';
+import AiOriginDisplay from './AiOriginDisplay';
 
 interface LeftSidebarProps {
   allWords: Word[];
@@ -9,6 +10,7 @@ interface LeftSidebarProps {
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVisible }) => {
   
+  // --- FILTER & SEARCH STATE ---
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [activeLanguageFilter, setActiveLanguageFilter] = useState('Tüm Diller');
   const [activePeriodFilter, setActivePeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
@@ -19,11 +21,19 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
 
   const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
 
+  // --- AI STATES ---
+  const [aiOrigin, setAiOrigin] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiSearchedWord, setAiSearchedWord] = useState('');
+  const [hasAiSearched, setHasAiSearched] = useState(false);
+
+  // --- STYLING ---
   const dynamicSidebarStyle: React.CSSProperties = {
     ...sidebarStyle,
     transform: isVisible ? 'translateX(0)' : 'translateX(-100%)',
   };
 
+  // --- FILTER LOGIC ---
   const filteredWords = useMemo(() => {
     return allWords
       .filter(word => {
@@ -35,19 +45,68 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
       .sort((a, b) => a.word.localeCompare(b.word, 'tr'));
   }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
 
-  const availableLanguages = useMemo(() => ['Tüm Diller', ...new Set(allWords.map(w => w.originLanguage).sort())], [allWords]);
+  const availableLanguages = useMemo(() => {
+    const uniqueLangs = [...new Set(allWords.map(w => w.originLanguage))];
+    uniqueLangs.sort((a, b) => a.localeCompare(b, 'tr'));
+    return ['Tüm Diller', ...uniqueLangs];
+  }, [allWords]);
+
   const availablePeriods: ('Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet')[] = ['Tüm Dönemler', 'Osmanlı Öncesi', 'Osmanlı', 'Cumhuriyet'];
+
+  const prepareAiRequest = (term: string) => {
+    const trimmedTerm = term.trim();
+    
+    if (trimmedTerm === '') {
+        setHasAiSearched(false);
+        setAiOrigin(null);
+        return;
+    }
+
+    setHasAiSearched(true);
+    setAiOrigin(null);
+    setAiSearchedWord(trimmedTerm);
+  };
+
+  const executeAiFetch = async () => {
+    if (!aiSearchedWord || aiSearchedWord.length < 2) return;
+
+    setIsAiLoading(true);
+    setAiOrigin(null);
+
+    try {
+      const response = await fetch(`/api/get-ai-origin?word=${encodeURIComponent(aiSearchedWord)}`);
+      const data = await response.json();
+      
+      if (data.origin) {
+        setAiOrigin(data.origin);
+      } else {
+        setAiOrigin("Bilinmiyor");
+      }
+    } catch (err) {
+      console.error("AI Fetch Error", err);
+      setAiOrigin("Hata oluştu");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const handleUpdateClick = () => {
     setActiveSearchTerm(stagedSearchTerm);
     setActiveLanguageFilter(stagedLanguageFilter);
     setActivePeriodFilter(stagedPeriodFilter);
+
+    prepareAiRequest(stagedSearchTerm);
   };
   
   return (
     <div style={dynamicSidebarStyle} className="sidebar-main">
-      {/* --- HEADER SECTION --- */}
       <div style={headerStyle} className="sidebar-header">
+        <style jsx>{`
+          .modern-input::placeholder {
+            color: rgba(255, 255, 255, 0.6) !important;
+          }
+        `}</style>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '15px' }}>
           <div style={{flex: 1, textAlign: 'center'}}>
             <h2 style={{margin: 0, marginLeft:20, display: 'inline-block'}}>Etimoloji Haritası</h2>
@@ -55,8 +114,19 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
           <div style={{width: '40px'}} /> 
         </div>
 
+        {/* --- AI SECTION --- */}
+        <AiOriginDisplay 
+           origin={aiOrigin} 
+           loading={isAiLoading} 
+           searchedWord={aiSearchedWord} 
+           hasSearched={hasAiSearched}
+           onStart={executeAiFetch}
+        />
+
+        {/* --- SEARCH BAR --- */}
         <div style={searchContainerStyle}>
           <input
+            className="modern-input"
             type="text"
             placeholder="Kelime ara..."
             value={stagedSearchTerm}
@@ -76,8 +146,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
           )}
 
           <button style={searchButtonStyle} onClick={handleUpdateClick}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      </button>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
         </div>
         
         <button 
@@ -86,29 +156,33 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
         >
           Filtrele {isFilterPanelVisible ? '▲' : '▼'}
         </button>
+
         {/* --- FILTER PANEL --- */}
         <div className={`filter-panel ${isFilterPanelVisible ? 'open' : ''}`}>
           <div style={{display: 'flex', gap: '10px', width: '100%'}}>
-
-          <select value={stagedLanguageFilter} onChange={(e) => setStagedLanguageFilter(e.target.value)} style={selectStyle}>
-            {availableLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-          </select>
-          <select value={stagedPeriodFilter} onChange={(e) => setStagedPeriodFilter(e.target.value as any)} style={selectStyle}>
-            {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
-          </select>
-        </div>
-          {/* update button needs some style */}
-          <button className="action-button" onClick={handleUpdateClick}>
+            <select value={stagedLanguageFilter} onChange={(e) => setStagedLanguageFilter(e.target.value)} style={selectStyle}>
+                {availableLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+            </select>
+            <select value={stagedPeriodFilter} onChange={(e) => setStagedPeriodFilter(e.target.value as any)} style={selectStyle}>
+                {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
+            </select>
+          </div>
+          <button className="action-button" onClick={handleUpdateClick} style={{ marginTop: '10px', width: '100%', padding: '8px', cursor: 'pointer' }}>
             Güncelle
           </button>
         </div>
       </div>
 
+      {/* --- WORD LIST --- */}
       <ul style={wordListStyle}>
         {filteredWords.map(word => (
           <li 
             key={word.id} 
-            onClick={() => onWordSelect(word)} 
+            onClick={() => {
+              onWordSelect(word);
+              setStagedSearchTerm(word.word);
+              prepareAiRequest(word.word);
+            }} 
             style={wordItemStyle} 
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--sidebar-item-hover-bg)';
@@ -128,6 +202,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   );
 };
 
+
+// --- STYLES ---
 
 const sidebarStyle: React.CSSProperties = {
   position: 'absolute',
@@ -155,57 +231,62 @@ const headerStyle: React.CSSProperties = {
 const searchContainerStyle: React.CSSProperties = {
   position: 'relative',
   display: 'flex',
+  alignItems: 'center',
   width: '100%',
-  marginBottom: '10px',
+  marginBottom: '15px',
+  marginTop: '5px',
+  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  borderRadius: '30px',
+  border: '1px solid rgba(255, 255, 255, 0.25)',
+  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+  padding: '2px 5px',
+  transition: 'all 0.3s ease',
 };
 
 const searchInputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px',
-  paddingRight: '70px',
-  boxSizing: 'border-box',
-  border: '1px solid #ccc',
-  borderRadius: '4px',
+  flex: 1,
+  border: 'none',
+  background: 'transparent',
+  padding: '10px 15px',
+  color: 'white',
+  fontSize: '0.95rem',
+  outline: 'none',
+  fontFamily: 'inherit',
 };
 
 const clearButtonStyle: React.CSSProperties = {
-  position: 'absolute',
-  right: '50px',
-  top: '50%',
-  transform: 'translateY(-50%)',
   background: 'none',
   border: 'none',
-  fontSize: '25px',
+  fontSize: '20px',
   cursor: 'pointer',
-  color: '#ff5b5bff',
-  padding: '0 5px',
+  color: 'rgba(255, 255, 255, 0.7)',
+  padding: '0 8px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'color 0.2s',
 };
 
 const searchButtonStyle: React.CSSProperties = {
-  position: 'absolute',
-  right: '0px',
-  top: '0px',
-  height: '100%',
-  width: '50px',
-  background: '#e9ecef',
-  border: '1px solid #ccc',
-  borderTopRightRadius: '4px',
-  borderBottomRightRadius: '4px',
+  background: 'rgba(255, 255, 255, 0.2)',
+  border: 'none',
+  borderRadius: '50%',
+  width: '36px',
+  height: '36px',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: '#666',
+  color: 'white',
+  marginRight: '2px',
+  transition: 'background-color 0.2s ease, transform 0.1s ease',
 };
 
-const filterContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '10px'
-};
 const selectStyle: React.CSSProperties = {
   width: '50%',
   padding: '12px'
 };
+
 const wordListStyle: React.CSSProperties = {
   listStyle: 'none',
   margin: 0,
@@ -214,6 +295,7 @@ const wordListStyle: React.CSSProperties = {
   flex: 1,
   transition: 'background-color 0.3s ease'
 };
+
 const wordItemStyle: React.CSSProperties = {
   padding: '12px 5px',
   cursor: 'pointer',
@@ -224,6 +306,7 @@ const wordItemStyle: React.CSSProperties = {
   marginBottom: '5px',
   borderLeft: '4px solid transparent', 
 };
+
 const wordDetailStyle: React.CSSProperties = {
   color: 'var(--sidebar-text-secondary)',
   marginTop: '4px',
