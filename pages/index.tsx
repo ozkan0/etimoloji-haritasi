@@ -15,10 +15,12 @@ import NewsTicker from '../components/NewsTicker';
 import ThemeSwitch from '../components/ThemeSwitch';
 import AboutButton from '../components/AboutButton';
 import AboutPanel from '../components/AboutPanel';
+import LoadingScreen from '../components/LoadingScreen';
+
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
-  loading: () => <p style={{ flex: 1, textAlign: 'center', alignSelf: 'center' }}>Harita Yükleniyor...</p>,
+  loading: () => null, 
 });
 
 interface HomeProps {
@@ -26,42 +28,41 @@ interface HomeProps {
 }
 
 const getRandomCoordinatesInBoundingBox = (language: Language): [number, number] => {
-  const { boundingBox, polygon } = language;
-
-  if (!boundingBox || !polygon || polygon.length === 0) {
-    console.error("Missing boundingBox or polygon for language:", language.language);
-
-    if (boundingBox) {
-        const [minLat, minLng, maxLat, maxLng] = boundingBox;
-        const lat = Math.random() * (maxLat - minLat) + minLat;
-        const lng = Math.random() * (maxLng - minLng) + minLng;
-        return [lat, lng];
+    const { boundingBox, polygon } = language;
+  
+    if (!boundingBox || !polygon || polygon.length === 0) {
+      console.error("Missing boundingBox or polygon for language:", language.language);
+  
+      if (boundingBox) {
+          const [minLat, minLng, maxLat, maxLng] = boundingBox;
+          const lat = Math.random() * (maxLat - minLat) + minLat;
+          const lng = Math.random() * (maxLng - minLng) + minLng;
+          return [lat, lng];
+      }
+      return [39.9334, 32.8597];
     }
-    return [39.9334, 32.8597];
-  }
-
-  let randomPoint: [number, number];
-  let isInside = false;
-  let attempts = 0; 
-
-  do {
-    const [minLat, minLng, maxLat, maxLng] = boundingBox;
-    const lat = Math.random() * (maxLat - minLat) + minLat;
-    const lng = Math.random() * (maxLng - minLng) + minLng;
-    randomPoint = [lng, lat]; 
-
-    isInside = pointInPolygon(randomPoint, polygon[0]);
-
-    attempts++;
-  } while (!isInside && attempts < 100);
-
-  if (!isInside) {
-    console.warn("Could not find a point inside the polygon for:", language.language, "using last attempt.");
-  }
-
-  return [randomPoint[1], randomPoint[0]]; 
-};
-
+  
+    let randomPoint: [number, number];
+    let isInside = false;
+    let attempts = 0; 
+  
+    do {
+      const [minLat, minLng, maxLat, maxLng] = boundingBox;
+      const lat = Math.random() * (maxLat - minLat) + minLat;
+      const lng = Math.random() * (maxLng - minLng) + minLng;
+      randomPoint = [lng, lat]; 
+  
+      isInside = pointInPolygon(randomPoint, polygon[0]);
+  
+      attempts++;
+    } while (!isInside && attempts < 100);
+  
+    if (!isInside) {
+      console.warn("Could not find a point inside the polygon for:", language.language, "using last attempt.");
+    }
+  
+    return [randomPoint[1], randomPoint[0]]; 
+  };
 
 const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -71,7 +72,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [activePopupData, setActivePopupData] = useState<PopupData | null>(null);
   
   const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // BU STATE ARTIK KRİTİK
   const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
 
@@ -82,17 +83,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       
       const { data: randomWords, error } = await supabase.rpc('get_random_words', { limit_count: 200 });
 
-      // newsticker data fetch
       const { data: newsData, error: newsError } = await supabase
         .from('news')
         .select('id, text');
         
-      if (newsError) {
-        console.error('Error fetching news:', newsError);
-      } else {
-        setNewsItems(newsData || []);
-      }
-      
+      if (newsError) console.error('Error fetching news:', newsError);
+      else setNewsItems(newsData || []);
+
       if (error) {
         console.error('Error fetching initial words:', error);
       } else if (randomWords) {
@@ -103,9 +100,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
 
         const initialMapWords: WordOnMap[] = wordsForMap.map((word: Word) => {
           const languageData = allLanguages.find((lang: Language) => lang.language === word.originLanguage);
-          if (!languageData) {
-            return null;
-          }
+          if (!languageData) return null;
           
           return {
             ...word,
@@ -115,7 +110,10 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
 
         setWordsOnMap(initialMapWords);
       }
-      setIsLoading(false);
+
+      setTimeout(() => {
+         setIsLoading(false);
+      }, 1500);
     };
     fetchInitialWords();
   }, [allLanguages]);
@@ -126,15 +124,9 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
 
   const handleWordSelect = (selectedWord: Word) => {
     const languageData = allLanguages.find(lang => lang.language === selectedWord.originLanguage);
-    if (!languageData || !languageData.boundingBox) {
-      return;
-    }
+    if (!languageData || !languageData.boundingBox) return;
     
-    // --- DEĞİŞİKLİK BURADA ---
-    // Eskiden sadece "if (detailPanelWord)" varken çalışıyordu.
-    // Artık her tıklamada paneli açıyoruz/güncelliyoruz.
     setDetailPanelWord(selectedWord);
-    // -------------------------
 
     const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
     if (existingWord) {
@@ -154,20 +146,19 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     } else {
       setActivePopupData(data);
     }
+    setDetailPanelWord(data.word);
   };
   
-  const handleClosePopups = () => {
-    setActivePopupData(null);
-  };
+  const handleClosePopups = () => setActivePopupData(null);
+  
   const handlePopupPositionUpdate = (newPosition: { x: number, y: number }) => {
     setActivePopupData(prevData => {
       if (!prevData) return null;
       return { ...prevData, position: newPosition };
     });
   };
-  const toggleAboutPanel = () => {
-    setIsAboutPanelVisible(prev => !prev);
-  };
+  
+  const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>
@@ -175,6 +166,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         <title>Etimoloji Haritası</title>
         <meta name="description" content="Türkçe kelimelerin etimolojik köken haritası" />
       </Head>
+
+      <LoadingScreen isLoading={isLoading} />
 
       <AboutButton onClick={toggleAboutPanel} />
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
