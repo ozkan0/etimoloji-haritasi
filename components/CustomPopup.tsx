@@ -13,7 +13,7 @@ interface CustomPopupProps {
   onShowDetails: (word: Word) => void;
 }
 
-const CustomPopup: React.FC<CustomPopupProps> = ({ data, onClose, onShowDetails }) => {
+const CustomPopup: React.FC<CustomPopupProps> = ({ data, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -24,8 +24,7 @@ const CustomPopup: React.FC<CustomPopupProps> = ({ data, onClose, onShowDetails 
       setIsVisible(false);
     }
   }, [data]);
-  // If there is no data, we should not try to render the popup.
-  // We return null to render nothing.
+
   if (!data) {
     return null;
   }
@@ -58,21 +57,10 @@ const CustomPopup: React.FC<CustomPopupProps> = ({ data, onClose, onShowDetails 
         <p>
           <strong>Örnek:</strong> "{word.exampleSentence}"
         </p>
-        <button 
-          className="custom-popup-details-btn" 
-          onClick={() => {
-            setIsVisible(false);
-            setTimeout(() => {
-              onShowDetails(word);
-            }, 200);
-          }}
-        >
-          Detayları Göster
-        </button>
+        {/* Buton Kaldırıldı */}
       </div>
     </div>
   );
 };
-
 
 export default CustomPopup;
