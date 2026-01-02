@@ -1,12 +1,10 @@
 export interface Word {
   id: number;
   word: string;
-  meaning: string;
   originLanguage: string;
-  period: 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet';
-  exampleSentence: string;
+  period: string;
   source: string;
-  references?: string;
+  date?: string | number;
 }
 
 export interface Language {
