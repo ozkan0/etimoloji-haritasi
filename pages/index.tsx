@@ -1,6 +1,6 @@
 import type { GetStaticProps, NextPage } from 'next';
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import path from 'path';
 import { promises as fs } from 'fs';
 import dynamic from 'next/dynamic';
@@ -31,8 +31,6 @@ const getRandomCoordinatesInBoundingBox = (language: Language): [number, number]
     const { boundingBox, polygon } = language;
   
     if (!boundingBox || !polygon || polygon.length === 0) {
-      console.error("Missing boundingBox or polygon for language:", language.language);
-  
       if (boundingBox) {
           const [minLat, minLng, maxLat, maxLng] = boundingBox;
           const lat = Math.random() * (maxLat - minLat) + minLat;
@@ -51,79 +49,117 @@ const getRandomCoordinatesInBoundingBox = (language: Language): [number, number]
       const lat = Math.random() * (maxLat - minLat) + minLat;
       const lng = Math.random() * (maxLng - minLng) + minLng;
       randomPoint = [lng, lat]; 
-  
       isInside = pointInPolygon(randomPoint, polygon[0]);
-  
       attempts++;
     } while (!isInside && attempts < 100);
-  
-    if (!isInside) {
-      console.warn("Could not find a point inside the polygon for:", language.language, "using last attempt.");
-    }
   
     return [randomPoint[1], randomPoint[0]]; 
   };
 
 const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  
+  // Maps & Words States
   const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
+  const [defaultMapWords, setDefaultMapWords] = useState<WordOnMap[]>([]); 
+  const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
+  
+  // UI States
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
+  const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
   const [activePopupData, setActivePopupData] = useState<PopupData | null>(null);
-  
-  const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // BU STATE ARTIK KRİTİK
+  const [isLoading, setIsLoading] = useState(true);
   const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
 
+  const generateMapWords = useCallback((wordsToMap: Word[]) => {
+    const groupedWords: Record<string, Word[]> = {};
+    
+    wordsToMap.forEach(word => {
+      const langKey = word.originLanguage.trim();
+      if (!groupedWords[langKey]) {
+        groupedWords[langKey] = [];
+      }
+      groupedWords[langKey].push(word);
+    });
+
+    let selectedWords: Word[] = [];
+    const MAX_WORDS_PER_LANGUAGE = 5;
+
+    Object.keys(groupedWords).forEach(lang => {
+      const wordsInLang = groupedWords[lang];
+      const shuffled = [...wordsInLang].sort(() => 0.5 - Math.random());
+      const picked = shuffled.slice(0, MAX_WORDS_PER_LANGUAGE);
+      selectedWords = [...selectedWords, ...picked];
+    });
+
+    return selectedWords.map((word: Word) => {
+      const languageData = allLanguages.find((lang: Language) => 
+        lang.language.toLowerCase() === word.originLanguage.trim().toLowerCase()
+      );
+      
+      if (!languageData) {
+        return null; 
+      }
+      
+      return {
+        ...word,
+        coordinates: getRandomCoordinatesInBoundingBox(languageData),
+      };
+    }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
+  }, [allLanguages]);
 
   useEffect(() => {
     const fetchInitialWords = async () => {
       setIsLoading(true);
       
-      const { data: randomWords, error } = await supabase.rpc('get_random_words', { limit_count: 200 });
-
-      const { data: newsData, error: newsError } = await supabase
-        .from('news')
-        .select('id, text');
-        
-      if (newsError) console.error('Error fetching news:', newsError);
-      else setNewsItems(newsData || []);
+      const { data: rawData, error } = await supabase.rpc('get_random_words', { limit_count: 2000 });
+      
+      const { data: newsData, error: newsError } = await supabase.from('news').select('id, text');
+      if (!newsError) setNewsItems(newsData || []);
 
       if (error) {
-        console.error('Error fetching initial words:', error);
-      } else if (randomWords) {
-        setSidebarWords(randomWords);
+        console.error('Veri çekme hatası:', error);
+        setTimeout(() => setIsLoading(false), 1000);
+      } else if (rawData) {
+        const formattedWords: Word[] = rawData.map((w: any) => ({
+            id: w.id,
+            word: w.word,
+            originLanguage: w.originLanguage || w.originlanguage || w.origin_language || 'Bilinmiyor',
+            period: w.period,
+            source: w.source,
+            date: w.date
+        }));
+        setSidebarWords(formattedWords);
         
-        const INITIAL_MAP_WORD_COUNT = 35;
-        const wordsForMap = randomWords.slice(0, INITIAL_MAP_WORD_COUNT);
+        const initialSet = generateMapWords(formattedWords);
+        setWordsOnMap(initialSet);
+        setDefaultMapWords(initialSet);
 
-        const initialMapWords: WordOnMap[] = wordsForMap.map((word: Word) => {
-          const languageData = allLanguages.find((lang: Language) => lang.language === word.originLanguage);
-          if (!languageData) return null;
-          
-          return {
-            ...word,
-            coordinates: getRandomCoordinatesInBoundingBox(languageData),
-          };
-        }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
-
-        setWordsOnMap(initialMapWords);
+        setTimeout(() => { setIsLoading(false); }, 1500);
       }
-
-      setTimeout(() => {
-         setIsLoading(false);
-      }, 1500);
     };
-    fetchInitialWords();
-  }, [allLanguages]);
 
-  const toggleSidebar = () => {
-    setIsSidebarVisible(prev => !prev);
+    fetchInitialWords();
+  }, [generateMapWords]);
+
+  const handleFilterChange = (filteredWords: Word[], applyToMap: boolean) => {
+    if (applyToMap) {
+        const newMapSet = generateMapWords(filteredWords);
+        setWordsOnMap(newMapSet);
+    } else {
+        if (defaultMapWords.length > 0) {
+            setWordsOnMap(defaultMapWords);
+        }
+    }
   };
 
   const handleWordSelect = (selectedWord: Word) => {
-    const languageData = allLanguages.find(lang => lang.language === selectedWord.originLanguage);
+    const languageData = allLanguages.find(lang => 
+      lang.language.toLowerCase() === selectedWord.originLanguage.trim().toLowerCase()
+    );
+    
     if (!languageData || !languageData.boundingBox) return;
     
     setDetailPanelWord(selectedWord);
@@ -160,6 +196,17 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   
   const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
 
+  const handleQuickFilter = (type: 'language' | 'period', value: string) => {
+    setFilterTrigger({
+        type,
+        value,
+        timestamp: Date.now() // Her tıklamada değişsin ki useEffect algılasın
+    });
+    // Mobildeysek veya sidebar kapalıysa, sidebarı açalım ki filtreyi görsün
+    setIsSidebarVisible(true);
+  };
+  const toggleSidebar = () => setIsSidebarVisible(prev => !prev);
+
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>
       <Head>
@@ -177,6 +224,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         allWords={sidebarWords}
         onWordSelect={handleWordSelect} 
         isVisible={isSidebarVisible} 
+        onFilterChange={handleFilterChange} 
+        externalFilterTrigger={filterTrigger}
       />
 
       <main style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0 }}>
@@ -204,6 +253,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       <RightDetailPanel 
         word={detailPanelWord} 
         onClose={() => setDetailPanelWord(null)} 
+        onFilterTrigger={handleQuickFilter}
       />
     </div>
   );
@@ -212,14 +262,14 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
 export default Home;
 
 export const getStaticProps: GetStaticProps = async () => {
-  const dataDirectory = path.join(process.cwd(), 'data');
-  const languagesFilePath = path.join(dataDirectory, 'languages.json');
-  const languagesJsonData = await fs.readFile(languagesFilePath, 'utf8');
-  const allLanguages: Language[] = JSON.parse(languagesJsonData);
-
-  return {
-    props: {
-      allLanguages,
-    },
+    const dataDirectory = path.join(process.cwd(), 'data');
+    const languagesFilePath = path.join(dataDirectory, 'languages.json');
+    const languagesJsonData = await fs.readFile(languagesFilePath, 'utf8');
+    const allLanguages: Language[] = JSON.parse(languagesJsonData);
+  
+    return {
+      props: {
+        allLanguages,
+      },
+    };
   };
-};

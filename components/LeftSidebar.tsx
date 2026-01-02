@@ -6,19 +6,20 @@ interface LeftSidebarProps {
   allWords: Word[];
   onWordSelect: (word: Word) => void;
   isVisible: boolean;
+  onFilterChange: (filteredWords: Word[], applyToMap: boolean) => void;
+  externalFilterTrigger?: { type: 'language' | 'period', value: string, timestamp: number } | null;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVisible }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVisible, onFilterChange, externalFilterTrigger }) => {
   
   // --- STATE ---
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [committedSearchTerm, setCommittedSearchTerm] = useState('');
+  
   const [activeLanguageFilter, setActiveLanguageFilter] = useState('Tüm Diller');
   const [activePeriodFilter, setActivePeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
-
-  const [stagedSearchTerm, setStagedSearchTerm] = useState('');
-  const [stagedLanguageFilter, setStagedLanguageFilter] = useState('Tüm Diller');
-  const [stagedPeriodFilter, setStagedPeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
-
+  
+  const [applyToMap, setApplyToMap] = useState(false);
   const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
 
   // --- AI STATE ---
@@ -27,24 +28,34 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   const [aiSearchedWord, setAiSearchedWord] = useState('');
   const [hasAiSearched, setHasAiSearched] = useState(false);
 
-  // --- GÜNÜN KELİMESİ STATE ---
+  // --- WORD OF THE DAY ---
   const [wordOfTheDay, setWordOfTheDay] = useState<Word | null>(null);
 
-  // --- LOGIC ---
-  
-  // 1. Günün Kelimesini Belirle (Her gün herkes için aynı kelime)
+  // --- INITIALIZATION ---
   useEffect(() => {
     if (allWords.length > 0) {
       const today = new Date();
-      // Basit bir hash mantığı: Gün+Ay+Yıl toplamını kullan
       const seed = today.getDate() + (today.getMonth() + 1) * 100 + today.getFullYear() * 10000;
-      // Listeden modüler aritmetikle bir index seç
       const index = seed % allWords.length;
       setWordOfTheDay(allWords[index]);
     }
   }, [allWords]);
 
-  const filteredWords = useMemo(() => {
+  // --- EXTERNAL TRIGGER ---
+  useEffect(() => {
+    if (externalFilterTrigger) {
+        setIsFilterPanelVisible(true);
+        if (externalFilterTrigger.type === 'language') {
+            setActiveLanguageFilter(externalFilterTrigger.value);
+        } else if (externalFilterTrigger.type === 'period') {
+            setActivePeriodFilter(externalFilterTrigger.value as any);
+        }
+        setApplyToMap(true);
+    }
+  }, [externalFilterTrigger]);
+
+  // --- FILTER LOGIC ---
+  const filteredWordsForList = useMemo(() => {
     return allWords
       .filter(word => {
         const matchesSearch = word.word.toLowerCase().includes(activeSearchTerm.toLowerCase());
@@ -55,14 +66,35 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
       .sort((a, b) => a.word.localeCompare(b.word, 'tr'));
   }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
 
+  const filteredWordsForMap = useMemo(() => {
+    return allWords
+      .filter(word => {
+        const matchesSearch = word.word.toLowerCase().includes(committedSearchTerm.toLowerCase());
+        const matchesLanguage = activeLanguageFilter === 'Tüm Diller' || word.originLanguage === activeLanguageFilter;
+        const matchesPeriod = activePeriodFilter === 'Tüm Dönemler' || word.period === activePeriodFilter;
+        return matchesSearch && matchesLanguage && matchesPeriod;
+      });
+  }, [allWords, committedSearchTerm, activeLanguageFilter, activePeriodFilter]);
+
+  useEffect(() => {
+    onFilterChange(filteredWordsForMap, applyToMap);
+  }, [filteredWordsForMap, applyToMap]); 
+
+  // --- LANGUAGES ---
   const availableLanguages = useMemo(() => {
-    const uniqueLangs = [...new Set(allWords.map(w => w.originLanguage))];
+    const coreLanguages = [
+      'Türkçe', 'Arapça', 'Fransızca', 'Farsça', 'İtalyanca', 
+      'Almanca', 'İspanyolca', 'İngilizce', 'Latince', 'Yunanca'
+    ];
+    const dynamicLangs = allWords.map(w => w.originLanguage);
+    const uniqueLangs = [...new Set([...coreLanguages, ...dynamicLangs])];
     uniqueLangs.sort((a, b) => a.localeCompare(b, 'tr'));
     return ['Tüm Diller', ...uniqueLangs];
   }, [allWords]);
 
   const availablePeriods: ('Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet')[] = ['Tüm Dönemler', 'Osmanlı Öncesi', 'Osmanlı', 'Cumhuriyet'];
 
+  // --- AI ACTIONS ---
   const prepareAiRequest = (term: string) => {
     const trimmedTerm = term.trim();
     if (trimmedTerm === '') {
@@ -91,15 +123,33 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
     }
   };
 
-  const handleUpdateClick = () => {
-    setActiveSearchTerm(stagedSearchTerm);
-    setActiveLanguageFilter(stagedLanguageFilter);
-    setActivePeriodFilter(stagedPeriodFilter);
-    prepareAiRequest(stagedSearchTerm);
+  // --- HANDLERS ---
+  const handleSearchChange = (val: string) => {
+    setActiveSearchTerm(val);
+  };
+
+  const handleSearchSubmit = () => {
+    setCommittedSearchTerm(activeSearchTerm);
+    prepareAiRequest(activeSearchTerm);
+  };
+
+  const handleClearSearch = () => {
+    setActiveSearchTerm('');
+    setCommittedSearchTerm(''); 
+  };
+
+  const handleResetFilters = () => {
+    setActiveSearchTerm('');
+    setCommittedSearchTerm('');
+    setActiveLanguageFilter('Tüm Diller');
+    setActivePeriodFilter('Tüm Dönemler');
+    setApplyToMap(false);
+    setAiOrigin(null);
+    setHasAiSearched(false);
+    setAiSearchedWord('');
   };
   
   // --- STYLES ---
-  
   const dynamicSidebarStyle: React.CSSProperties = {
     position: 'absolute',
     height: '100vh',
@@ -161,7 +211,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   const wordListStyle: React.CSSProperties = {
     listStyle: 'none', margin: 0, padding: '10px',
     overflowY: 'auto', flex: 1,
-    paddingBottom: '100px', 
+    paddingBottom: '90px', 
   };
 
   const wordItemStyle: React.CSSProperties = {
@@ -176,13 +226,12 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
     fontSize: '0.85rem',
   };
 
-  // --- FOOTER STYLE (STICKY) ---
   const footerStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: 0,
     left: 0,
     width: '100%',
-    backgroundColor: 'var(--sidebar-header-bg)',
+    backgroundColor: 'var(--sidebar-header-bg)', 
     color: 'white',
     padding: '15px',
     borderTop: '1px solid rgba(255,255,255,0.1)',
@@ -191,10 +240,23 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
     cursor: 'pointer',
   };
 
+  const resetButtonStyle: React.CSSProperties = {
+    padding: '6px 12px',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 100, 100, 0.5)',
+    color: '#ffcccc',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    transition: 'all 0.2s',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    whiteSpace: 'nowrap'
+  };
+
   return (
     <div style={dynamicSidebarStyle} className="sidebar-main">
       
-      {/* HEADER */}
       <div style={headerStyle} className="sidebar-header">
         <style jsx>{` .modern-input::placeholder { color: white; opacity: 0.6; } `}</style>
 
@@ -213,26 +275,24 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
            onStart={executeAiFetch}
         />
 
-        {/* SEARCH BAR (Pill Shape) */}
         <div style={searchContainerStyle}>
           <input
             className="modern-input"
             type="text"
             placeholder="Kelime ara..."
-            value={stagedSearchTerm}
-            onChange={(e) => setStagedSearchTerm(e.target.value)}
+            value={activeSearchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
             style={searchInputStyle}
-            onKeyDown={(e) => e.key === 'Enter' && handleUpdateClick()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
           />
-          {stagedSearchTerm && (
-            <button onClick={() => setStagedSearchTerm('')} style={clearButtonStyle}>×</button>
+          {activeSearchTerm && (
+            <button onClick={handleClearSearch} style={clearButtonStyle}>×</button>
           )}
-          <button style={searchButtonStyle} onClick={handleUpdateClick}>
+          <button style={searchButtonStyle} onClick={handleSearchSubmit}>
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </div>
         
-        {/* --- FILTER SECTION --- */}
         <button 
           className="filter-button-modern" 
           onClick={() => setIsFilterPanelVisible(prev => !prev)}
@@ -241,28 +301,54 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
         </button>
 
         <div className={`filter-panel-modern ${isFilterPanelVisible ? 'open' : ''}`}>
+          
+          {/* Dropdowns */}
           <div style={{display: 'flex', gap: '10px', width: '100%'}}>
-            <select value={stagedLanguageFilter} onChange={(e) => setStagedLanguageFilter(e.target.value)} className="modern-select">
+            <select value={activeLanguageFilter} onChange={(e) => setActiveLanguageFilter(e.target.value)} className="modern-select">
                 {availableLanguages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
             </select>
-            <select value={stagedPeriodFilter} onChange={(e) => setStagedPeriodFilter(e.target.value as any)} className="modern-select">
+            <select value={activePeriodFilter} onChange={(e) => setActivePeriodFilter(e.target.value as any)} className="modern-select">
                 {availablePeriods.map(period => <option key={period} value={period}>{period}</option>)}
             </select>
           </div>
-          <button className="action-button-modern" onClick={handleUpdateClick}>
-            Filtreyi Uygula
-          </button>
+
+          <div style={{display:'flex', alignItems:'center', justifyContent: 'space-between', marginTop:'15px'}}>
+             
+             {/* Checkbox Sol Taraf */}
+             <div style={{display:'flex', alignItems:'center', gap:'8px', cursor: 'pointer'}} onClick={() => setApplyToMap(!applyToMap)}>
+                <input 
+                    type="checkbox" 
+                    id="applyMap" 
+                    checked={applyToMap} 
+                    onChange={(e) => setApplyToMap(e.target.checked)}
+                    style={{cursor:'pointer', width:'16px', height:'16px', accentColor: 'var(--detailspanel-header-bg)', margin: 0}}
+                />
+                <label htmlFor="applyMap" style={{color:'white', fontSize:'0.85rem', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap'}}>
+                    Haritayı Filtrele
+                </label>
+             </div>
+
+             <button 
+                style={resetButtonStyle}
+                onClick={handleResetFilters}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 100, 100, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Tüm filtreleri sıfırla"
+              >
+                <span>🗑️</span> Temizle
+              </button>
+
+          </div>
+
         </div>
       </div>
 
-      {/* WORD LIST */}
       <ul style={wordListStyle}>
-        {filteredWords.map(word => (
+        {filteredWordsForList.map(word => (
           <li 
             key={word.id} 
             onClick={() => {
               onWordSelect(word);
-              setStagedSearchTerm(word.word);
               prepareAiRequest(word.word);
             }} 
             style={wordItemStyle}
@@ -275,36 +361,20 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
         ))}
       </ul>
 
-      {/* --- STICKY FOOTER: GÜNÜN KELİMESİ --- */}
       {wordOfTheDay && (
         <div 
             style={footerStyle}
             onClick={() => {
                 onWordSelect(wordOfTheDay);
-                setStagedSearchTerm(wordOfTheDay.word);
                 prepareAiRequest(wordOfTheDay.word);
             }}
         >
-            <div style={{
-                fontSize: '0.7rem', 
-                textTransform: 'uppercase', 
-                letterSpacing: '1px', 
-                opacity: 0.8,
-                marginBottom: '4px',
-                display: 'flex', alignItems: 'center', gap: '5px'
-            }}>
+            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 ✨ Günün Kelimesi
             </div>
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <div>
-                    <span style={{fontSize: '1.2rem', fontWeight: 800}}>{wordOfTheDay.word}</span>
-                </div>
-                <div style={{
-                    fontSize: '0.8rem', 
-                    backgroundColor: 'rgba(255,255,255,0.2)', 
-                    padding: '3px 8px', 
-                    borderRadius: '6px'
-                }}>
+                <div><span style={{fontSize: '1.2rem', fontWeight: 800}}>{wordOfTheDay.word}</span></div>
+                <div style={{ fontSize: '0.8rem', backgroundColor: 'rgba(255,255,255,0.2)', padding: '3px 8px', borderRadius: '6px' }}>
                     {wordOfTheDay.originLanguage}
                 </div>
             </div>
