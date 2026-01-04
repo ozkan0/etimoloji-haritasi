@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L, { LatLngBoundsExpression } from 'leaflet';
 import { WordOnMap } from '../types/types';
@@ -31,7 +31,6 @@ const MapZoomHandler = () => {
     };
 
     updateZoomClasses();
-
     map.on('zoom', updateZoomClasses);
 
     return () => {
@@ -66,6 +65,36 @@ const FlyToMarker = ({ target }: { target: [number, number] | null }) => {
   return null;
 };
 
+const createWordIcon = (wordText: string) => {
+  return L.divIcon({
+    className: 'word-marker-container',
+    html: `<div class="modern-marker">${wordText}</div>`,
+    iconSize: null as any, 
+    iconAnchor: [0, 0],
+  });
+};
+
+const WordMarker = React.memo(({ word, onClick }: { word: WordOnMap, onClick: (e: any) => void }) => {
+  
+  const icon = useMemo(() => createWordIcon(word.word), [word.word]);
+
+  return (
+    <Marker 
+      position={word.coordinates}
+      icon={icon}
+      eventHandlers={{
+        click: onClick,
+      }}
+    />
+  );
+}, (prevProps, nextProps) => {
+  // Only re-render if word ID or coordinates change
+  return prevProps.word.id === nextProps.word.id && 
+         prevProps.word.coordinates[0] === nextProps.word.coordinates[0] &&
+         prevProps.word.coordinates[1] === nextProps.word.coordinates[1];
+});
+
+
 interface MapProps {
   wordsOnMap: WordOnMap[];
   mapFlyToTarget: [number, number] | null;
@@ -86,19 +115,10 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
   const lightMapUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   const darkMapUrl = `https://{s}.tile.jawg.io/cff409a6-f8fe-4c7b-a746-46097db4ee20/{z}/{x}/{y}{r}.png?access-token=${process.env.NEXT_PUBLIC_JAWG_TOKEN}`;
 
-  const createWordIcon = (wordText: string) => {
-    return L.divIcon({
-      className: 'word-marker-container',
-      html: `<div class="modern-marker">${wordText}</div>`,
-      iconSize: null as any, 
-      iconAnchor: [0, 0],
-    });
-  };
-
   return (
     <MapContainer
       center={[39.9334, 32.8597]}
-      zoom={5}
+      zoom={4}
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: theme === 'light' ? '#e3f7ff' : '#191a1a' }}
       maxBounds={mapBounds}
@@ -126,15 +146,12 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
         if (isNaN(word.coordinates[0]) || isNaN(word.coordinates[1])) return null;
 
         return (
-          <Marker 
+          <WordMarker 
             key={word.id} 
-            position={word.coordinates}
-            icon={createWordIcon(word.word)}
-            eventHandlers={{
-              click: (e) => {
-                onMarkerClick({ word, position: e.containerPoint, latlng: e.latlng });
-              },
-            }}
+            word={word} 
+            onClick={(e) => {
+               onMarkerClick({ word, position: e.containerPoint, latlng: e.latlng });
+            }} 
           />
         );
       })}
