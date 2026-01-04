@@ -16,7 +16,8 @@ import ThemeSwitch from '../components/ThemeSwitch';
 import AboutButton from '../components/AboutButton';
 import AboutPanel from '../components/AboutPanel';
 import LoadingScreen from '../components/LoadingScreen';
-
+import StatsPanel from '../components/StatsPanel';
+import TimeSlider from '../components/TimeSlider';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -72,15 +73,22 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
+  const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
 
+  // Time & Filter
+  const [selectedYear, setSelectedYear] = useState(2025);
+  const [currentFilteredList, setCurrentFilteredList] = useState<Word[]>([]);
+  const [isMapFilterActive, setIsMapFilterActive] = useState(false);
+
+  const [currentActiveLang, setCurrentActiveLang] = useState('Tüm Diller');
+  const [currentActivePeriod, setCurrentActivePeriod] = useState('Tüm Dönemler');
+
+  // --- HARİTA OLUŞTURMA ---
   const generateMapWords = useCallback((wordsToMap: Word[]) => {
     const groupedWords: Record<string, Word[]> = {};
-    
     wordsToMap.forEach(word => {
       const langKey = word.originLanguage.trim();
-      if (!groupedWords[langKey]) {
-        groupedWords[langKey] = [];
-      }
+      if (!groupedWords[langKey]) groupedWords[langKey] = [];
       groupedWords[langKey].push(word);
     });
 
@@ -98,11 +106,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       const languageData = allLanguages.find((lang: Language) => 
         lang.language.toLowerCase() === word.originLanguage.trim().toLowerCase()
       );
-      
-      if (!languageData) {
-        return null; 
-      }
-      
+      if (!languageData) return null;
       return {
         ...word,
         coordinates: getRandomCoordinatesInBoundingBox(languageData),
@@ -110,12 +114,12 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
   }, [allLanguages]);
 
+  // --- VERİ ÇEKME ---
   useEffect(() => {
     const fetchInitialWords = async () => {
       setIsLoading(true);
       
       const { data: rawData, error } = await supabase.rpc('get_random_words', { limit_count: 2000 });
-      
       const { data: newsData, error: newsError } = await supabase.from('news').select('id, text');
       if (!newsError) setNewsItems(newsData || []);
 
@@ -131,7 +135,9 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
             source: w.source,
             date: w.date
         }));
+        
         setSidebarWords(formattedWords);
+        setCurrentFilteredList(formattedWords); 
         
         const initialSet = generateMapWords(formattedWords);
         setWordsOnMap(initialSet);
@@ -144,22 +150,43 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     fetchInitialWords();
   }, [generateMapWords]);
 
-  const handleFilterChange = (filteredWords: Word[], applyToMap: boolean) => {
-    if (applyToMap) {
-        const newMapSet = generateMapWords(filteredWords);
-        setWordsOnMap(newMapSet);
-    } else {
-        if (defaultMapWords.length > 0) {
-            setWordsOnMap(defaultMapWords);
-        }
+  useEffect(() => {
+    const baseList = isMapFilterActive ? currentFilteredList : sidebarWords;
+
+    if (baseList.length === 0) return;
+
+    let finalWords = baseList;
+
+    if (!isMapFilterActive) {
+        finalWords = baseList.filter(word => {
+            if (!word.date) return true;
+            const wDate = parseInt(String(word.date));
+            if (isNaN(wDate)) return true;
+            return wDate <= selectedYear;
+        });
     }
+
+    if (!isMapFilterActive && selectedYear >= 2025 && defaultMapWords.length > 0) {
+        setWordsOnMap(defaultMapWords);
+    } else {
+        const newMapSet = generateMapWords(finalWords);
+        setWordsOnMap(newMapSet);
+    }
+
+  }, [selectedYear, currentFilteredList, isMapFilterActive, sidebarWords, defaultMapWords, generateMapWords]);
+
+
+  const handleFilterChange = (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string) => {
+    setCurrentFilteredList(filteredWords);
+    setIsMapFilterActive(applyToMap);
+    setCurrentActiveLang(activeLang);
+    setCurrentActivePeriod(activePeriod);
   };
 
   const handleWordSelect = (selectedWord: Word) => {
     const languageData = allLanguages.find(lang => 
       lang.language.toLowerCase() === selectedWord.originLanguage.trim().toLowerCase()
     );
-    
     if (!languageData || !languageData.boundingBox) return;
     
     setDetailPanelWord(selectedWord);
@@ -197,12 +224,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
 
   const handleQuickFilter = (type: 'language' | 'period', value: string) => {
-    setFilterTrigger({
-        type,
-        value,
-        timestamp: Date.now() // Her tıklamada değişsin ki useEffect algılasın
-    });
-    // Mobildeysek veya sidebar kapalıysa, sidebarı açalım ki filtreyi görsün
+    setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
   };
   const toggleSidebar = () => setIsSidebarVisible(prev => !prev);
@@ -238,6 +260,15 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
           onPopupPositionUpdate={handlePopupPositionUpdate}
         />
       </main>
+      
+      <TimeSlider 
+        year={selectedYear} 
+        onChange={setSelectedYear} 
+        isLeftOpen={isSidebarVisible}
+        isRightOpen={detailPanelWord !== null}
+        disabled={isMapFilterActive} 
+      />
+
       <NewsTicker newsItems={newsItems} />
       <ThemeSwitch />
 
@@ -254,6 +285,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         word={detailPanelWord} 
         onClose={() => setDetailPanelWord(null)} 
         onFilterTrigger={handleQuickFilter}
+        onOpenStats={() => setIsStatsPanelOpen(true)}
+        activeFilterLanguage={currentActiveLang}
+        activeFilterPeriod={currentActivePeriod}
+      />
+      <StatsPanel 
+        isOpen={isStatsPanelOpen} 
+        onClose={() => setIsStatsPanelOpen(false)} 
       />
     </div>
   );

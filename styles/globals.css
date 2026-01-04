@@ -71,9 +71,9 @@ html, body {
   --marker-border: #475569;
   --marker-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
+/* --- MODERN FLOATING LABELS (RED PULSE EFFECT) --- */
 
-/* --- MODERN FLOATING LABELS (Textbox style) --- */
-
+/* 1. Reset Leaflet Container */
 .word-marker-container {
   background: transparent !important;
   border: none !important;
@@ -82,68 +82,98 @@ html, body {
   height: auto !important;
 }
 
+/* 2. Main Marker Style */
 .modern-marker {
   background-color: var(--marker-bg);
   color: var(--marker-text);
-  border: 2px solid var(--marker-border); 
-  border-radius: 999px; 
-  width: max-content;
-  min-width: 40px; 
   
-  /* DEFAULT (Smallest Size) - Prevents big initial load */
-  font-size: 12px;
-  padding: 5px 12px;
-  border-width: 2px;
-
+  /* Varsayılan Kenarlık */
+  border: 1px solid var(--marker-border); 
+  
+  border-radius: 999px;
+  width: max-content;
+  min-width: 30px;
+  
+  /* Default Size */
+  font-size: 11px;
+  padding: 4px 10px;
+  
   font-family: var(--font-lora), serif;
   font-weight: 700;
-  box-shadow: var(--marker-shadow);
+  
+  /* Hafif gölge */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   white-space: nowrap;
   
-  /* CSS Transition handles smooth resizing */
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
   
-  /* Center exactly on the coordinate */
+  /* Konumlandırma */
   transform: translate(-50%, -50%);
   transform-origin: center center;
   
   user-select: none;
   -webkit-user-select: none;
+  
+  /* Kırmızı Yanıp Sönme Animasyonu */
+  animation: red-pulse 3s infinite ease-in-out;
+  
+  /* Geçişler */
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), 
+              font-size 0.2s, 
+              padding 0.2s;
 }
 
-/* --- DYNAMIC SIZES BASED ON MAP ZOOM CLASS --- */
+/* 3. Red Pulse Animation Keyframes */
+@keyframes red-pulse {
+  0% {
+    border-color: var(--marker-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  50% {
+    border-color: #ef4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  }
+  100% {
+    border-color: var(--marker-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+}
 
-/* Medium Zoom (Zoom 5) */
+/* 4. Zoom Levels */
 .map-zoom-mid .modern-marker {
   font-size: 13px;
   padding: 6px 14px;
-  border-width: 2px;
 }
-
-/* High Zoom (Zoom 6+) */
 .map-zoom-high .modern-marker {
   font-size: 15px;
-  padding: 8px 18px;
-  border-width: 2px;
+  padding: 8px 16px;
+}
+.map-zoom-low .modern-marker {
+  font-size: 12px;
+  padding: 5px 13px;
 }
 
-/* Hover Effect */
+/* 5. Interactions */
+
+/* Hover */
 .word-marker-container:hover .modern-marker {
   z-index: 9999;
+  animation: none;
   border-color: var(--main-buttons-bg);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
   transform: translate(-50%, -50%) scale(1.15); 
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
 }
 
-.modern-marker.active {
-  background-color: var(--main-buttons-bg);
-  color: white;
-  border-color: white;
+/* Click */
+.modern-marker:active {
+  transform: translate(-50%, -50%) scale(0.95) !important;
+  transition: transform 0.05s ease-out;
+  background-color: var(--sidebar-item-hover-bg);
 }
 
 /* --- COMPONENTS (Popups & Panels) --- */

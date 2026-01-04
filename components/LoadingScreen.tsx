@@ -21,7 +21,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
       <div className="loading-content">
         <h1 className="title">Etimoloji Haritası</h1>
         <div className="loader-line"></div>
-        <p className="subtitle">Kelimeler haritaya yerleşiyorlar...</p>
+        <p className="subtitle">Kelimeler haritaya yerleştiriliyor...</p>
       </div>
 
       <style jsx>{`
