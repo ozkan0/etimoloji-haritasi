@@ -53,7 +53,7 @@ const CustomPopup: React.FC<CustomPopupProps> = ({ data, onClose }) => {
     } else {
       setIsVisible(false);
     }
-  }, [data]);
+  }, [data?.word.id]);
 
   if (!data) return null;
 

@@ -1,74 +1,134 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { lora } from '../styles/fonts';
 
-// --- COMPONENT: NewsTicker ---
-// still beta
 interface NewsTickerProps {
   newsItems: { id: number; text: string }[];
 }
+
 const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
 
-  useEffect(() => {
-    if (newsItems.length === 0) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setIsVisible(false);
-
-      setTimeout(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % newsItems.length);
-        setIsVisible(true);
-      }, 500);
-
-    }, 8000);
-
-    return () => clearInterval(intervalId);
-  }, [newsItems]);
-
-  if (newsItems.length === 0) {
+  if (!newsItems || newsItems.length === 0) {
     return null;
   }
 
-  const textStyle: React.CSSProperties = {
-    transition: 'opacity 0.5s ease-in-out',
-    opacity: isVisible ? 1 : 0,
-    textAlign: 'center',
-    width: '100%',
-    margin: 0,
+  const handleAnimationEnd = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % newsItems.length);
   };
 
   return (
-    <div style={tickerContainerStyle}>
-      <p style={textStyle}>
-        {newsItems[currentIndex].text}
-      </p>
+    <div className={`ticker-wrapper ${lora.className}`}>
+      <style jsx>{`
+        .ticker-wrapper {
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1000;
+          
+          width: 90%;
+          max-width: 800px;
+          height: 36px;
+          
+          background-color: rgba(0, 71, 73, 0.9);
+          color: white;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(10px);
+          
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+
+          /* Block Selection */
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          
+          pointer-events: auto; 
+          cursor: default;
+          
+          /* Enforce Font Inheritance */
+          font-family: inherit;
+        }
+
+        @media (min-width: 768px) {
+          .ticker-wrapper {
+            width: 60%;
+            top: 15px;
+          }
+        }
+
+        .ticker-inner {
+          width: 100%;
+          height: 100%;
+          position: relative;
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+        }
+
+        .ticker-text {
+          display: inline-block;
+          white-space: nowrap;
+          padding-left: 20px;
+          padding-right: 20px;
+          
+          animation: ticker-scroll 18s linear infinite;
+          
+          font-size: 15px;
+          font-weight: 500;
+          position: absolute;
+          width: 100%;
+          text-align: center;
+          
+          /* Inherit Lora from wrapper */
+          font-family: inherit;
+        }
+
+        @media (min-width: 768px) {
+          .ticker-text {
+            font-size: 17px;
+          }
+        }
+        
+        .ticker-wrapper:hover .ticker-text {
+          animation-play-state: paused;
+        }
+
+        @keyframes ticker-scroll {
+          0% {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          5% {
+            opacity: 1;
+          }
+          95% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(-150%);
+            opacity: 0;
+          }
+        }
+      `}</style>
+
+      <div className="ticker-inner">
+        <p 
+          key={currentIndex} 
+          className="ticker-text" 
+          onAnimationIteration={handleAnimationEnd}
+          onAnimationEnd={handleAnimationEnd}
+        >
+          {newsItems[currentIndex].text}
+        </p>
+      </div>
     </div>
   );
-};
-
-// --- STYLES ---
-const tickerContainerStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '2px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 1000,
-  width: '60%',
-  height: '32px',
-  display: 'flex',
-  alignItems: 'center',
-  maxWidth: '50%',
-  backgroundColor: '#004749ff',
-  color: 'white',
-  borderRadius: '18px',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  textAlign: 'center',
-  fontFamily: '--font-lora',
-  fontSize: '16px',
-  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.5)',
-  backdropFilter: 'blur(5px)',
 };
 
 export default NewsTicker;

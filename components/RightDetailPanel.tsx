@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Word } from '../types/types';
+import SubmissionModal from './SubmissionModal'; 
 
 interface LiveTdkData {
   meaning: string;
@@ -10,7 +11,6 @@ interface RightDetailPanelProps {
   word: Word | null;
   onClose: () => void;
   onFilterTrigger: (type: 'language' | 'period', value: string) => void;
-  onOpenStats: () => void;
   activeFilterLanguage: string;
   activeFilterPeriod: string;
 }
@@ -31,18 +31,22 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     word, 
     onClose, 
     onFilterTrigger, 
-    onOpenStats,
-    activeFilterLanguage,
-    activeFilterPeriod
+    activeFilterLanguage, 
+    activeFilterPeriod    
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [liveData, setLiveData] = useState<LiveTdkData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const [isReported, setIsReported] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
+  // --- SUBMISSION MODAL STATE ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'suggestion' | 'report'>('suggestion');
+
+  // Simple state to show "Reported" feedback
+  const [isReported, setIsReported] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -85,7 +89,6 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
 
   const toggleMinimize = () => setIsMinimized(prev => !prev);
   const handleClose = (e: React.MouseEvent) => { e.stopPropagation(); setIsVisible(false); setTimeout(onClose, 300); };
-  const handleReport = () => { if (isReported) return; setIsReported(true); };
   
   const handleSpeak = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -97,19 +100,31 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
+  // --- SUBMISSION HANDLERS ---
+  const handleOpenSuggestion = () => {
+    setModalType('suggestion');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenReport = () => {
+    setModalType('report');
+    setIsModalOpen(true);
+  };
+
+  const handleSuccess = () => {
+    if (modalType === 'report') {
+      setIsReported(true);
+    }
+    alert('Bildiriminiz başarıyla gönderildi, teşekkürler!');
+  };
+
   const handleBadgeClick = (type: 'language' | 'period', value: string) => {
     if (type === 'language') {
-        if (activeFilterLanguage === value) {
-            onFilterTrigger('language', 'Tüm Diller');
-        } else {
-            onFilterTrigger('language', value);
-        }
+        if (activeFilterLanguage === value) onFilterTrigger('language', 'Tüm Diller');
+        else onFilterTrigger('language', value);
     } else {
-        if (activeFilterPeriod === value) {
-            onFilterTrigger('period', 'Tüm Dönemler');
-        } else {
-            onFilterTrigger('period', value);
-        }
+        if (activeFilterPeriod === value) onFilterTrigger('period', 'Tüm Dönemler');
+        else onFilterTrigger('period', value);
     }
   };
 
@@ -119,22 +134,45 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   let transformValue = 'translateX(100%)';
   if (isVisible) { transformValue = isMinimized ? 'translateY(calc(100% - 65px))' : 'translateY(0)'; }
 
-  const panelStyle: React.CSSProperties = { position: 'absolute', top: '40px', right: '0', bottom: '0', height: 'auto', width: '380px', backgroundColor: 'var(--sidebar-main-bg)', borderLeft: '1px solid var(--sidebar-border-color)', borderTop: '1px solid var(--sidebar-border-color)', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', zIndex: 1002, transform: transformValue, transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)', display: 'flex', flexDirection: 'column', color: 'var(--sidebar-text-primary)', fontFamily: 'sans-serif', borderTopLeftRadius: '22px', borderTopRightRadius: '22px', overflow: 'hidden' };
+  const panelStyle: React.CSSProperties = { 
+    position: 'absolute', top: '40px', right: '0', bottom: '0', 
+    height: 'auto', width: '380px', 
+    backgroundColor: 'var(--sidebar-main-bg)', 
+    borderLeft: '1px solid var(--sidebar-border-color)', 
+    borderTop: '1px solid var(--sidebar-border-color)', 
+    boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', 
+    zIndex: 1002, transform: transformValue, 
+    transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)', 
+    display: 'flex', flexDirection: 'column', 
+    color: 'var(--sidebar-text-primary)', fontFamily: 'sans-serif', 
+    borderTopLeftRadius: '22px', borderTopRightRadius: '22px', overflow: 'hidden' 
+  };
+
   const headerStyle: React.CSSProperties = { padding: '15px 24px', backgroundColor: 'var(--detailspanel-header-bg)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderTopLeftRadius: '22px', cursor: 'pointer', height: '65px', transition: 'background-color 0.2s' };
   const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
-  const footerStyle: React.CSSProperties = { padding: '20px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: 'var(--sidebar-item-hover-bg)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '30px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
+  
+  // Footer: Pinned at bottom
+  const footerStyle: React.CSSProperties = { 
+    padding: '15px 24px', 
+    borderTop: '1px solid var(--sidebar-border-color)', 
+    backgroundColor: 'var(--sidebar-item-hover-bg)', 
+    flexShrink: 0, 
+    display: 'flex', 
+    gap: '12px',
+    paddingBottom: '30px', 
+    opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' 
+  };
 
+  const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-secondary)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
+  
   const getBadgeStyle = (type: 'language' | 'period', value: string): React.CSSProperties => {
     const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value);
-
     return {
-        display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px',
-        fontSize: '0.85rem', fontWeight: 600,
+        ...badgeStyle,
         backgroundColor: isActive ? 'var(--detailspanel-header-bg)' : 'var(--sidebar-item-hover-bg)',
         border: isActive ? '1px solid transparent' : '1px solid var(--sidebar-border-color)',
         color: isActive ? 'white' : 'var(--sidebar-text-secondary)',
         boxShadow: isActive ? 'inset 0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)',
-        gap: '6px', cursor: 'pointer', userSelect: 'none', transition: 'all 0.2s'
     };
   };
 
@@ -142,7 +180,22 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const textStyle: React.CSSProperties = { fontSize: '1rem', lineHeight: '1.6', margin: 0 };
   const primaryButtonStyle: React.CSSProperties = { textDecoration: 'none', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '6px', border: 'none', color: 'white', backgroundColor: 'var(--detailspanel-header-bg)', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', flex: '0 0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' };
   const getRefButtonStyle = (btnId: string): React.CSSProperties => ({ textDecoration: 'none', fontSize: '0.9rem', padding: '12px 14px', borderRadius: '10px', backgroundColor: hoveredBtn === btnId ? 'var(--sidebar-item-hover-bg)' : 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', fontWeight: 500, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flex: 1, transform: hoveredBtn === btnId ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hoveredBtn === btnId ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)' });
-  const dateBadgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-secondary)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'default', opacity: 0.9 };
+
+  // Styles for footer buttons
+  const footerActionBtnStyle: React.CSSProperties = {
+    flex: 1, 
+    padding: '10px', 
+    borderRadius: '8px', 
+    cursor: 'pointer',
+    fontSize: '0.85rem', 
+    fontWeight: 600, 
+    transition: 'all 0.2s',
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: '6px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+  };
 
   return (
     <div style={panelStyle} className="right-panel-modern">
@@ -159,6 +212,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
       {word && (
         <>
           <div style={contentStyle}>
+            {/* Title & Info */}
             <div>
               <div style={{display:'flex', alignItems:'center', gap:'15px', marginBottom:'16px'}}>
                   <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-1px' }}>
@@ -175,31 +229,17 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {/* KÖKEN BUTONU (Toggle) */}
-                <span 
-                    className="shiny-effect" 
-                    style={getBadgeStyle('language', word.originLanguage)} 
-                    title={activeFilterLanguage === word.originLanguage ? "Filtreyi Kaldır" : `${word.originLanguage} kökenli kelimeleri filtrele`}
-                    onClick={() => handleBadgeClick('language', word.originLanguage)}
-                >
+                <span className="shiny-effect" style={getBadgeStyle('language', word.originLanguage)} title="Köken Dili" onClick={() => handleBadgeClick('language', word.originLanguage)}>
                   {getFlagUrl(word.originLanguage) && (
                     <img src={getFlagUrl(word.originLanguage)!} alt={word.originLanguage} style={{ width: '20px', height: '15px', borderRadius: '2px', objectFit: 'cover' }} />
                   )}
                   {word.originLanguage}
                 </span>
-
-                {/* DÖNEM BUTONU (Toggle) */}
-                <span 
-                    className="shiny-effect" 
-                    style={getBadgeStyle('period', word.period)} 
-                    title={activeFilterPeriod === word.period ? "Filtreyi Kaldır" : `${word.period} dönemine ait kelimeleri filtrele`}
-                    onClick={() => handleBadgeClick('period', word.period)}
-                >
+                <span className="shiny-effect" style={getBadgeStyle('period', word.period)} title="Girdiği Dönem" onClick={() => handleBadgeClick('period', word.period)}>
                   {word.period}
                 </span>
-
                 {word.date && (
-                    <span style={dateBadgeStyle} title="İlk Tespit Tarihi">
+                    <span style={{...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default'}} title="İlk Tespit Tarihi">
                         {word.date}
                     </span>
                 )}
@@ -234,17 +274,64 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
               <span style={labelStyle}>DİJİTAL REFERANSLAR</span>
               <div style={{display:'flex', gap:'12px'}}>
                  <a href={`https://www.etimolojiturkce.com/kelime/${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={getRefButtonStyle('etimoloji')} onMouseEnter={() => setHoveredBtn('etimoloji')} onMouseLeave={() => setHoveredBtn(null)}>🏛️ Etimoloji TR</a>
-                 <a href={`https://www.google.com/search?q=${encodeURI(word.word)}+köken+dili`} target="_blank" rel="noreferrer" style={getRefButtonStyle('google')} onMouseEnter={() => setHoveredBtn('google')} onMouseLeave={() => setHoveredBtn(null)}>🔍 Google</a>
+                 <a href={`https://www.google.com/search?q=${encodeURI(word.word)}+kelime+kökeni`} target="_blank" rel="noreferrer" style={getRefButtonStyle('google')} onMouseEnter={() => setHoveredBtn('google')} onMouseLeave={() => setHoveredBtn(null)}>🔍 Google</a>
               </div>
             </div>
           </div>
 
+          {/* FOOTER */}
           <div style={footerStyle}>
-            <button onClick={onOpenStats} style={{ height: '50px', width: '100%', border: '1px solid var(--sidebar-border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sidebar-text-primary)', fontSize: '0.9rem', backgroundColor: 'var(--sidebar-item-hover-bg)', cursor: 'pointer', fontWeight: 600, gap: '8px', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-main-bg)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-item-hover-bg)'}><span>📊</span> Veritabanı İstatistiklerini Gör</button>
-            <div style={{marginTop:'10px'}}>
-               <button onClick={handleReport} disabled={isReported} style={{ width: '100%', padding: '10px', background: isReported ? 'transparent' : 'rgba(255, 99, 71, 0.1)', color: isReported ? 'green' : '#d32f2f', border: isReported ? '1px solid green' : '1px solid rgba(255, 99, 71, 0.3)', borderRadius: '8px', cursor: isReported ? 'default' : 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }}>{isReported ? '✓ Hata Bildirimi Alındı' : '⚠️ Hata / Yanlış Bilgi Bildir'}</button>
-            </div>
+             {/* Edit / Suggestion */}
+             <button 
+               onClick={handleOpenSuggestion}
+               style={{
+                   ...footerActionBtnStyle,
+                   background: 'var(--sidebar-item-hover-bg)',
+                   border: '1px solid var(--detailspanel-header-bg)',
+                   color: 'var(--detailspanel-header-bg)',
+               }}
+               onMouseEnter={(e) => e.currentTarget.style.background = 'var(--sidebar-main-bg)'}
+               onMouseLeave={(e) => e.currentTarget.style.background = 'var(--sidebar-item-hover-bg)'}
+             >
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+               Öneri
+             </button>
+
+             {/* Report Error */}
+             <button 
+               onClick={handleOpenReport}
+               disabled={isReported}
+               style={{
+                   ...footerActionBtnStyle,
+                   background: isReported ? 'transparent' : 'rgba(220, 53, 69, 0.1)', 
+                   color: isReported ? 'green' : '#dc3545',
+                   border: isReported ? '1px solid green' : '1px solid #dc3545',
+                   cursor: isReported ? 'default' : 'pointer'
+               }}
+             >
+               {isReported ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Bildirildi
+                  </>
+               ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    Hata Bildir
+                  </>
+               )}
+             </button>
           </div>
+
+          <SubmissionModal 
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              type={modalType}
+              wordName={word.word}
+              wordId={word.id}
+              onSuccess={handleSuccess}
+          />
+
         </>
       )}
     </div>
