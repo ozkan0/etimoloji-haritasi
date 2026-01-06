@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { lora } from '../styles/fonts';
 
 interface LoadingScreenProps {
   isLoading: boolean;
@@ -17,11 +18,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
   if (!shouldRender) return null;
 
   return (
-    <div className={`loading-screen ${!isLoading ? 'fade-out' : ''}`}>
+    <div className={`loading-screen ${!isLoading ? 'fade-out' : ''} ${lora.className}`}>
       <div className="loading-content">
         <h1 className="title">Etimoloji Haritası</h1>
         <div className="loader-line"></div>
-        <p className="subtitle">Kelimeler haritaya yerleştiriliyor...</p>
+        <p className="subtitle">Veriler hazırlanıyor...</p>
       </div>
 
       <style jsx>{`
@@ -31,7 +32,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
           left: 0;
           width: 100vw;
           height: 100vh;
-          background: #212934; /* Dark Theme Background */
+          background: #212934;
           color: white;
           display: flex;
           align-items: center;
@@ -54,7 +55,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
         }
 
         .title {
-          font-family: 'Lora', serif; /* Eğer font yüklüyse */
+          /* Inherits Lora from wrapper class */
           font-size: 3rem;
           font-weight: 700;
           margin: 0;

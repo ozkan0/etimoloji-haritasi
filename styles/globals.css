@@ -8,7 +8,7 @@ html, body {
   transition: background-color 0.3s ease;
 }
 
-/* Light Theme (Default) */
+/* Light Theme */
 :root {
   --sidebar-main-bg: #e3f7ff;
   --sidebar-header-bg: #5885AF;
@@ -40,7 +40,7 @@ html, body {
   --marker-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Dark Theme */
+/* Dark Theme (Default) */
 [data-theme='dark'] {
   --sidebar-main-bg: #212934;
   --sidebar-header-bg: #274472;
@@ -73,7 +73,7 @@ html, body {
 }
 /* --- MODERN FLOATING LABELS (RED PULSE EFFECT) --- */
 
-/* 1. Reset Leaflet Container */
+/* Reset Leaflet Container */
 .word-marker-container {
   background: transparent !important;
   border: none !important;
@@ -82,7 +82,7 @@ html, body {
   height: auto !important;
 }
 
-/* 2. Main Marker Style */
+/* Main Marker Style */
 .modern-marker {
   background-color: var(--marker-bg);
   color: var(--marker-text);
@@ -128,7 +128,7 @@ html, body {
               padding 0.2s;
 }
 
-/* 3. Red Pulse Animation Keyframes */
+/* Red Pulse Animation Keyframes */
 @keyframes red-pulse {
   0% {
     border-color: var(--marker-border);
@@ -144,21 +144,21 @@ html, body {
   }
 }
 
-/* 4. Zoom Levels */
-.map-zoom-mid .modern-marker {
+/* Zoom Levels */
+.map-zoom-low .modern-marker {
   font-size: 13px;
-  padding: 6px 14px;
-}
-.map-zoom-high .modern-marker {
-  font-size: 15px;
   padding: 8px 16px;
 }
-.map-zoom-low .modern-marker {
-  font-size: 12px;
-  padding: 5px 13px;
+.map-zoom-mid .modern-marker {
+  font-size: 14px;
+  padding: 9px 18px;
+}
+.map-zoom-high .modern-marker {
+  font-size: 16px;
+  padding: 10px 20px;
 }
 
-/* 5. Interactions */
+/* Interactions */
 
 /* Hover */
 .word-marker-container:hover .modern-marker {

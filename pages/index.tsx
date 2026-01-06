@@ -18,6 +18,7 @@ import AboutPanel from '../components/AboutPanel';
 import LoadingScreen from '../components/LoadingScreen';
 import StatsPanel from '../components/StatsPanel';
 import TimeSlider from '../components/TimeSlider';
+import StatsButton from '../components/StatsButton';
 
 const MapComponent = dynamic(() => import('../components/Map'), {
   ssr: false,
@@ -80,10 +81,10 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [currentFilteredList, setCurrentFilteredList] = useState<Word[]>([]);
   const [isMapFilterActive, setIsMapFilterActive] = useState(false);
 
+  // Active Filter Info
   const [currentActiveLang, setCurrentActiveLang] = useState('Tüm Diller');
   const [currentActivePeriod, setCurrentActivePeriod] = useState('Tüm Dönemler');
 
-  // --- HARİTA OLUŞTURMA ---
   const generateMapWords = useCallback((wordsToMap: Word[]) => {
     const groupedWords: Record<string, Word[]> = {};
     wordsToMap.forEach(word => {
@@ -114,7 +115,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
   }, [allLanguages]);
 
-  // --- VERİ ÇEKME ---
   useEffect(() => {
     const fetchInitialWords = async () => {
       setIsLoading(true);
@@ -176,6 +176,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   }, [selectedYear, currentFilteredList, isMapFilterActive, sidebarWords, defaultMapWords, generateMapWords]);
 
 
+  // Handlers
   const handleFilterChange = (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string) => {
     setCurrentFilteredList(filteredWords);
     setIsMapFilterActive(applyToMap);
@@ -239,6 +240,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       <LoadingScreen isLoading={isLoading} />
 
       <AboutButton onClick={toggleAboutPanel} />
+      <StatsButton onClick={() => setIsStatsPanelOpen(true)} />
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
       
@@ -285,7 +287,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         word={detailPanelWord} 
         onClose={() => setDetailPanelWord(null)} 
         onFilterTrigger={handleQuickFilter}
-        onOpenStats={() => setIsStatsPanelOpen(true)}
         activeFilterLanguage={currentActiveLang}
         activeFilterPeriod={currentActivePeriod}
       />
