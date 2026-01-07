@@ -58,7 +58,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
         @media (min-width: 768px) {
           .ticker-wrapper {
             width: 60%;
-            top: 15px;
+            top: 0px;
           }
         }
 

@@ -6,8 +6,7 @@ import { lora } from '../styles/fonts';
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
-      {/* Apply Lora font globally here */}
-      <main className={lora.className}>
+      <main className={`${lora.className} ${lora.variable}`}>
         <Component {...pageProps} />
       </main>
     </ThemeProvider>
