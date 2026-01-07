@@ -2,7 +2,6 @@ import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L, { LatLngBoundsExpression } from 'leaflet';
 import { WordOnMap } from '../types/types';
-import { PopupData } from './CustomPopup';
 import { useTheme } from '../context/ThemeContext';
 
 const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
@@ -12,45 +11,19 @@ const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
 
 const MapZoomHandler = () => {
   const map = useMap();
-  
   useEffect(() => {
     const container = map.getContainer();
-
     const updateZoomClasses = () => {
       const zoom = map.getZoom();
-      
       container.classList.remove('map-zoom-low', 'map-zoom-mid', 'map-zoom-high');
-
-      if (zoom >= 6) {
-        container.classList.add('map-zoom-high');
-      } else if (zoom >= 5) {
-        container.classList.add('map-zoom-mid');
-      } else {
-        container.classList.add('map-zoom-low');
-      }
+      if (zoom >= 6) container.classList.add('map-zoom-high');
+      else if (zoom >= 5) container.classList.add('map-zoom-mid');
+      else container.classList.add('map-zoom-low');
     };
-
     updateZoomClasses();
     map.on('zoom', updateZoomClasses);
-
-    return () => {
-      map.off('zoom', updateZoomClasses);
-    };
+    return () => { map.off('zoom', updateZoomClasses); };
   }, [map]);
-
-  return null;
-};
-
-const PopupPositionUpdater = ({ activePopup, onUpdate }: { activePopup: PopupData | null; onUpdate: (newPosition: { x: number, y: number }) => void; }) => {
-  const map = useMap();
-  useMapEvents({
-    move() {
-      if (activePopup) {
-        const newScreenPosition = map.latLngToContainerPoint(activePopup.latlng);
-        onUpdate(newScreenPosition);
-      }
-    },
-  });
   return null;
 };
 
@@ -65,60 +38,61 @@ const FlyToMarker = ({ target }: { target: [number, number] | null }) => {
   return null;
 };
 
-const createWordIcon = (wordText: string) => {
+const createWordIcon = (wordText: string, isSelected: boolean) => {
+  const activeClass = isSelected ? 'active' : '';
+  
   return L.divIcon({
     className: 'word-marker-container',
-    html: `<div class="modern-marker">${wordText}</div>`,
+    html: `<div class="modern-marker ${activeClass}">${wordText}</div>`,
     iconSize: null as any, 
     iconAnchor: [0, 0],
   });
 };
 
-const WordMarker = React.memo(({ word, onClick }: { word: WordOnMap, onClick: (e: any) => void }) => {
-  
-  const icon = useMemo(() => createWordIcon(word.word), [word.word]);
+const WordMarker = React.memo(({ word, isSelected, onClick }: { word: WordOnMap, isSelected: boolean, onClick: (e: any) => void }) => {
+  const icon = useMemo(() => createWordIcon(word.word, isSelected), [word.word, isSelected]);
 
   return (
     <Marker 
       position={word.coordinates}
       icon={icon}
+      zIndexOffset={isSelected ? 1000 : 0}
       eventHandlers={{
         click: onClick,
       }}
     />
   );
 }, (prevProps, nextProps) => {
-  // Only re-render if word ID or coordinates change
   return prevProps.word.id === nextProps.word.id && 
          prevProps.word.coordinates[0] === nextProps.word.coordinates[0] &&
-         prevProps.word.coordinates[1] === nextProps.word.coordinates[1];
+         prevProps.word.coordinates[1] === nextProps.word.coordinates[1] &&
+         prevProps.isSelected === nextProps.isSelected;
 });
-
 
 interface MapProps {
   wordsOnMap: WordOnMap[];
   mapFlyToTarget: [number, number] | null;
-  onMarkerClick: (data: PopupData) => void;
+  onMarkerClick: (word: WordOnMap) => void;
   onMapClick: () => void;
-  activePopupData: PopupData | null;
-  onPopupPositionUpdate: (newPosition: { x: number, y: number }) => void;
+  selectedWordId: number | null;
 }
 
-const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, onMapClick, activePopupData, onPopupPositionUpdate }) => {
+const Map: React.FC<MapProps> = ({ 
+  wordsOnMap, 
+  mapFlyToTarget, 
+  onMarkerClick, 
+  onMapClick, 
+  selectedWordId 
+}) => {
   const { theme } = useTheme(); 
-  
-  const mapBounds: LatLngBoundsExpression = [
-    [-40, -80], 
-    [75, 170], 
-  ];
-
+  const mapBounds: LatLngBoundsExpression = [[-40, -80], [75, 170]];
   const lightMapUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   const darkMapUrl = `https://{s}.tile.jawg.io/cff409a6-f8fe-4c7b-a746-46097db4ee20/{z}/{x}/{y}{r}.png?access-token=${process.env.NEXT_PUBLIC_JAWG_TOKEN}`;
 
   return (
     <MapContainer
       center={[39.9334, 32.8597]}
-      zoom={4}
+      zoom={5}
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: theme === 'light' ? '#e3f7ff' : '#191a1a' }}
       maxBounds={mapBounds}
@@ -127,11 +101,6 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
       zoomControl={false}
     >
       <MapZoomHandler />
-
-      <PopupPositionUpdater 
-        activePopup={activePopupData} 
-        onUpdate={onPopupPositionUpdate}  
-      />
       
       <TileLayer
         key={theme}
@@ -149,8 +118,10 @@ const Map: React.FC<MapProps> = ({ wordsOnMap, mapFlyToTarget, onMarkerClick, on
           <WordMarker 
             key={word.id} 
             word={word} 
+            isSelected={selectedWordId === word.id} 
             onClick={(e) => {
-               onMarkerClick({ word, position: e.containerPoint, latlng: e.latlng });
+               L.DomEvent.stopPropagation(e);
+               onMarkerClick(word);
             }} 
           />
         );

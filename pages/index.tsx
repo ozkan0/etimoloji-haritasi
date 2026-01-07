@@ -1,12 +1,11 @@
 import type { GetStaticProps, NextPage } from 'next';
 import Head from 'next/head';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import path from 'path';
 import { promises as fs } from 'fs';
 import dynamic from 'next/dynamic';
 import LeftSidebar from '../components/LeftSidebar';
 import RightDetailPanel from '../components/RightDetailPanel';
-import CustomPopup, { PopupData } from '../components/CustomPopup';
 import ToggleSidebarButton from '../components/ToggleSidebarButton';
 import { Word, Language, WordOnMap } from '../types/types';
 import { supabase } from '../lib/supabaseClient';
@@ -58,7 +57,7 @@ const getRandomCoordinatesInBoundingBox = (language: Language): [number, number]
     return [randomPoint[1], randomPoint[0]]; 
   };
 
-const Home: NextPage<HomeProps> = ({ allLanguages }) => {
+const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   
   // Maps & Words States
@@ -70,7 +69,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
   const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
-  const [activePopupData, setActivePopupData] = useState<PopupData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
@@ -84,8 +82,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
   // Active Filter Info
   const [currentActiveLang, setCurrentActiveLang] = useState('Tüm Diller');
   const [currentActivePeriod, setCurrentActivePeriod] = useState('Tüm Dönemler');
+  
+  // Word limit per language
+  const [limitPerLang, setLimitPerLang] = useState(5);
 
-  const generateMapWords = useCallback((wordsToMap: Word[]) => {
+  const generateMapWords = useCallback((wordsToMap: Word[], limit: number) => {
+    if (!allLanguages || allLanguages.length === 0) return [];
+
     const groupedWords: Record<string, Word[]> = {};
     wordsToMap.forEach(word => {
       const langKey = word.originLanguage.trim();
@@ -94,12 +97,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
     });
 
     let selectedWords: Word[] = [];
-    const MAX_WORDS_PER_LANGUAGE = 5;
-
+    
     Object.keys(groupedWords).forEach(lang => {
       const wordsInLang = groupedWords[lang];
       const shuffled = [...wordsInLang].sort(() => 0.5 - Math.random());
-      const picked = shuffled.slice(0, MAX_WORDS_PER_LANGUAGE);
+      const picked = shuffled.slice(0, limit); 
       selectedWords = [...selectedWords, ...picked];
     });
 
@@ -139,52 +141,51 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
         setSidebarWords(formattedWords);
         setCurrentFilteredList(formattedWords); 
         
-        const initialSet = generateMapWords(formattedWords);
+        // Initial generation
+        const initialSet = generateMapWords(formattedWords, 5);
         setWordsOnMap(initialSet);
         setDefaultMapWords(initialSet);
 
         setTimeout(() => { setIsLoading(false); }, 1500);
       }
     };
-
     fetchInitialWords();
   }, [generateMapWords]);
 
+  const mapSourceList = useMemo(() => {
+    return isMapFilterActive ? currentFilteredList : sidebarWords;
+  }, [isMapFilterActive, currentFilteredList, sidebarWords]);
+
   useEffect(() => {
-    const baseList = isMapFilterActive ? currentFilteredList : sidebarWords;
+    if (mapSourceList.length === 0) return;
 
-    if (baseList.length === 0) return;
+    // Apply Time Filter
+    const timeFilteredList = mapSourceList.filter(word => {
+        if (!word.date) return true;
+        const wDate = parseInt(String(word.date));
+        if (isNaN(wDate)) return true;
+        return wDate <= selectedYear;
+    });
 
-    let finalWords = baseList;
-
-    if (!isMapFilterActive) {
-        finalWords = baseList.filter(word => {
-            if (!word.date) return true;
-            const wDate = parseInt(String(word.date));
-            if (isNaN(wDate)) return true;
-            return wDate <= selectedYear;
-        });
-    }
-
-    if (!isMapFilterActive && selectedYear >= 2025 && defaultMapWords.length > 0) {
+    if (!isMapFilterActive && selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5) {
         setWordsOnMap(defaultMapWords);
     } else {
-        const newMapSet = generateMapWords(finalWords);
+        const newMapSet = generateMapWords(timeFilteredList, limitPerLang);
         setWordsOnMap(newMapSet);
     }
+  }, [selectedYear, mapSourceList, isMapFilterActive, defaultMapWords, generateMapWords, limitPerLang]);
 
-  }, [selectedYear, currentFilteredList, isMapFilterActive, sidebarWords, defaultMapWords, generateMapWords]);
-
-
-  // Handlers
-  const handleFilterChange = (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string) => {
+  const handleFilterChange = (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string, limit: number) => {
     setCurrentFilteredList(filteredWords);
     setIsMapFilterActive(applyToMap);
     setCurrentActiveLang(activeLang);
     setCurrentActivePeriod(activePeriod);
+    setLimitPerLang(limit);
   };
 
   const handleWordSelect = (selectedWord: Word) => {
+    if (!allLanguages) return;
+
     const languageData = allLanguages.find(lang => 
       lang.language.toLowerCase() === selectedWord.originLanguage.trim().toLowerCase()
     );
@@ -201,29 +202,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       setWordsOnMap(prevWords => [...prevWords, newWordOnMap]);
       setMapFlyToTarget(newCoordinates);
     }
-    setActivePopupData(null);
   };
 
-  const handleMarkerClick = (data: PopupData) => {
-    if (activePopupData && activePopupData.word.id === data.word.id) {
-      setActivePopupData(null);
-    } else {
-      setActivePopupData(data);
-    }
-    setDetailPanelWord(data.word);
-  };
-  
-  const handleClosePopups = () => setActivePopupData(null);
-  
-  const handlePopupPositionUpdate = (newPosition: { x: number, y: number }) => {
-    setActivePopupData(prevData => {
-      if (!prevData) return null;
-      return { ...prevData, position: newPosition };
-    });
-  };
+  const handleMarkerClick = (word: WordOnMap) => { setDetailPanelWord(word); };
+  const handleMapClick = () => { };
+  const handlePopupPositionUpdate = (newPosition: { x: number, y: number }) => { };
   
   const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
-
   const handleQuickFilter = (type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
@@ -238,7 +223,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
       </Head>
 
       <LoadingScreen isLoading={isLoading} />
-
       <AboutButton onClick={toggleAboutPanel} />
       <StatsButton onClick={() => setIsStatsPanelOpen(true)} />
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
@@ -257,9 +241,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
           wordsOnMap={wordsOnMap} 
           mapFlyToTarget={mapFlyToTarget} 
           onMarkerClick={handleMarkerClick}
-          onMapClick={handleClosePopups}
-          activePopupData={activePopupData}
-          onPopupPositionUpdate={handlePopupPositionUpdate}
+          onMapClick={handleMapClick}
+          selectedWordId={detailPanelWord?.id || null} 
         />
       </main>
       
@@ -273,15 +256,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages }) => {
 
       <NewsTicker newsItems={newsItems} />
       <ThemeSwitch />
-
-      <CustomPopup 
-        data={activePopupData}
-        onClose={handleClosePopups}
-        onShowDetails={(word) => {
-          setDetailPanelWord(word);
-          setActivePopupData(null);
-        }}
-      />
       
       <RightDetailPanel 
         word={detailPanelWord} 
