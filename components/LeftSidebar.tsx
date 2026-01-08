@@ -244,7 +244,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
                 <input type="checkbox" checked={applyToMap} onChange={(e) => setApplyToMap(e.target.checked)} style={{display: 'none'}} />
                 <span style={{color:'white', fontSize:'0.9rem', fontWeight: 500, userSelect:'none'}}>Haritayı Filtrele</span>
              </label>
-             <button style={resetButtonStyle} onClick={handleResetFilters} title="Filtreleri sıfırla"><span>🗑️</span> Sıfırla</button>
+             <button style={resetButtonStyle} onClick={handleResetFilters} title="Filtreleri sıfırla">Sıfırla</button>
           </div>
         </div>
       </div>
