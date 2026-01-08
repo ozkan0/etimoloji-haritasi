@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { lora } from '../styles/fonts';
+import { albertSans } from '../styles/fonts';
 
 interface NewsTickerProps {
   newsItems: { id: number; text: string }[];
@@ -17,7 +17,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
   };
 
   return (
-    <div className={`ticker-wrapper ${lora.className}`}>
+    <div className={`ticker-wrapper ${albertSans.className}`}>
       <style jsx>{`
         .ticker-wrapper {
           position: absolute;

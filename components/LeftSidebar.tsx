@@ -93,6 +93,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
 
   const [wordOfTheDay, setWordOfTheDay] = useState<Word | null>(null);
 
+  // --- INITIALIZATION ---
   useEffect(() => {
     if (allWords.length > 0) {
       const today = new Date();
@@ -102,6 +103,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
     }
   }, [allWords]);
 
+  // --- EXTERNAL TRIGGER ---
   useEffect(() => {
     if (externalFilterTrigger) {
         if (externalFilterTrigger.type === 'language') {
@@ -113,6 +115,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
     }
   }, [externalFilterTrigger]);
 
+  // --- FILTER LOGIC (LIST) ---
   const filteredWordsForList = useMemo(() => {
     return allWords
       .filter(word => {
@@ -124,6 +127,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
       .sort((a, b) => a.word.localeCompare(b.word, 'tr'));
   }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
 
+  // --- FILTER LOGIC (MAP) ---
   const filteredWordsForMap = useMemo(() => {
     return allWords
       .filter(word => {
@@ -134,18 +138,24 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
       });
   }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
 
+  // --- UPDATE PARENT ---
   useEffect(() => {
     onFilterChange(filteredWordsForMap, applyToMap, activeLanguageFilter, activePeriodFilter, limitPerLanguage);
   }, [filteredWordsForMap, applyToMap, activeLanguageFilter, activePeriodFilter, limitPerLanguage]); 
 
+  // --- LANGUAGES ---
   const availableLanguages = useMemo(() => {
-    const coreLanguages = ['Türkçe', 'Arapça', 'Fransızca', 'Farsça', 'İtalyanca', 'Almanca', 'İspanyolca', 'İngilizce', 'Latince', 'Yunanca'];
+    const coreLanguages = [
+      'Türkçe', 'Arapça', 'Fransızca', 'Farsça', 'İtalyanca', 
+      'Almanca', 'İspanyolca', 'İngilizce', 'Latince', 'Yunanca'
+    ];
     const dynamicLangs = allWords.map(w => w.originLanguage);
     const uniqueLangs = [...new Set([...coreLanguages, ...dynamicLangs])];
     uniqueLangs.sort((a, b) => a.localeCompare(b, 'tr'));
     return ['Tüm Diller', ...uniqueLangs];
   }, [allWords]);
 
+  // --- HANDLERS ---
   const handleSearchChange = (val: string) => { setActiveSearchTerm(val); };
   const handleClearSearch = () => { setActiveSearchTerm(''); };
 
@@ -157,7 +167,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   };
   
   // --- STYLES ---
-  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: '350px', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '22px', overflow: 'visible', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
+  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: '350px', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '22px', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
   const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: 'var(--sidebar-header-bg)', color: 'white' };
   
   const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '10px', backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.25)', padding: '4px 10px' };
@@ -257,7 +267,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
       {wordOfTheDay && (
         <div style={footerStyle} onClick={() => onWordSelect(wordOfTheDay)}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.9, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24' }}> GÜNÜN KELİMESİ</div>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <div style={{display: 'flex', justifyContent:'space-between', alignItems: 'center'}}>
                 <div><span style={{fontSize: '1.3rem', fontWeight: 800}}>{wordOfTheDay.word}</span></div>
                 <div style={{ fontSize: '0.8rem', backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}>{wordOfTheDay.originLanguage}</div>
             </div>

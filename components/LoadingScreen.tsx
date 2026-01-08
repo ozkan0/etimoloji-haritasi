@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { lora } from '../styles/fonts';
+import { albertSans } from '../styles/fonts';
 
 interface LoadingScreenProps {
   isLoading: boolean;
@@ -18,7 +18,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
   if (!shouldRender) return null;
 
   return (
-    <div className={`loading-screen ${!isLoading ? 'fade-out' : ''} ${lora.className}`}>
+    <div className={`loading-screen ${!isLoading ? 'fade-out' : ''} ${albertSans.className}`}>
       <div className="loading-content">
         <h1 className="title">Etimoloji Haritası</h1>
         <div className="loader-line"></div>
