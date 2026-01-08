@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { albertSans } from '../styles/fonts';
+import { albertSans } from '../../styles/fonts';
 
 interface LoadingScreenProps {
   isLoading: boolean;

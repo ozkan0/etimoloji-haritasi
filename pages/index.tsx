@@ -1,25 +1,32 @@
 import type { GetStaticProps, NextPage } from 'next';
-import Head from 'next/head';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import path from 'path';
 import { promises as fs } from 'fs';
 import dynamic from 'next/dynamic';
-import LeftSidebar from '../components/LeftSidebar';
-import RightDetailPanel from '../components/RightDetailPanel';
-import ToggleSidebarButton from '../components/ToggleSidebarButton';
-import { Word, Language, WordOnMap } from '../types/types';
-import { supabase } from '../lib/supabaseClient';
-import pointInPolygon from 'point-in-polygon';
-import NewsTicker from '../components/NewsTicker';
-import ThemeSwitch from '../components/ThemeSwitch';
-import AboutButton from '../components/AboutButton';
-import AboutPanel from '../components/AboutPanel';
-import LoadingScreen from '../components/LoadingScreen';
-import StatsPanel from '../components/StatsPanel';
-import TimeSlider from '../components/TimeSlider';
-import StatsButton from '../components/StatsButton';
+import { useRouter } from 'next/router';
 
-const MapComponent = dynamic(() => import('../components/Map'), {
+// Layouts & UI
+import LeftSidebar from '../components/layout/LeftSidebar';
+import RightDetailPanel from '../components/layout/RightDetailPanel';
+import AboutPanel from '../components/layout/AboutPanel';
+import StatsPanel from '../components/layout/StatsPanel';
+import ToggleSidebarButton from '../components/ui/ToggleSidebarButton';
+import ThemeSwitch from '../components/ui/ThemeSwitch';
+import AboutButton from '../components/ui/AboutButton';
+import StatsButton from '../components/ui/StatsButton';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import MetaHead from '../components/ui/MetaHead';
+
+// Features
+import NewsTicker from '../components/features/news/NewsTicker';
+import TimeSlider from '../components/features/timeline/TimeSlider';
+
+// Logic / Types
+import { Word, Language, WordOnMap } from '../types/types';
+import { getRandomCoordinatesInBoundingBox } from '../utils/geoUtils';
+import { useEtymologyData } from '../hooks/useEtymologyData';
+
+const MapComponent = dynamic(() => import('../components/map/Map'), {
   ssr: false,
   loading: () => null, 
 });
@@ -28,64 +35,35 @@ interface HomeProps {
   allLanguages: Language[];
 }
 
-const getRandomCoordinatesInBoundingBox = (language: Language): [number, number] => {
-    const { boundingBox, polygon } = language;
-  
-    if (!boundingBox || !polygon || polygon.length === 0) {
-      if (boundingBox) {
-          const [minLat, minLng, maxLat, maxLng] = boundingBox;
-          const lat = Math.random() * (maxLat - minLat) + minLat;
-          const lng = Math.random() * (maxLng - minLng) + minLng;
-          return [lat, lng];
-      }
-      return [39.9334, 32.8597];
-    }
-  
-    let randomPoint: [number, number];
-    let isInside = false;
-    let attempts = 0; 
-  
-    do {
-      const [minLat, minLng, maxLat, maxLng] = boundingBox;
-      const lat = Math.random() * (maxLat - minLat) + minLat;
-      const lng = Math.random() * (maxLng - minLng) + minLng;
-      randomPoint = [lng, lat]; 
-      isInside = pointInPolygon(randomPoint, polygon[0]);
-      attempts++;
-    } while (!isInside && attempts < 100);
-  
-    return [randomPoint[1], randomPoint[0]]; 
-  };
-
 const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
+  const router = useRouter();
+
+  // --- DATA FETCHING ---
+  const { sidebarWords, newsItems, isLoading } = useEtymologyData();
+
+  // --- UI STATES ---
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-  
-  // Maps & Words States
-  const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
-  const [defaultMapWords, setDefaultMapWords] = useState<WordOnMap[]>([]); 
-  const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
-  
-  // UI States
-  const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
-  const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
-  const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
+  
+  // --- MAP DATA STATES ---
+  const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
+  const [defaultMapWords, setDefaultMapWords] = useState<WordOnMap[]>([]); 
+  
+  // --- SELECTION & FILTER STATES ---
+  const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
+  const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
+  const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
 
-  // Time & Filter
   const [selectedYear, setSelectedYear] = useState(2025);
   const [currentFilteredList, setCurrentFilteredList] = useState<Word[]>([]);
   const [isMapFilterActive, setIsMapFilterActive] = useState(false);
 
-  // Active Filter Info
   const [currentActiveLang, setCurrentActiveLang] = useState('Tüm Diller');
   const [currentActivePeriod, setCurrentActivePeriod] = useState('Tüm Dönemler');
-  
-  // Word limit per language
   const [limitPerLang, setLimitPerLang] = useState(5);
 
+  // --- MAP GENERATION LOGIC ---
   const generateMapWords = useCallback((wordsToMap: Word[], limit: number) => {
     if (!allLanguages || allLanguages.length === 0) return [];
 
@@ -97,7 +75,6 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     });
 
     let selectedWords: Word[] = [];
-    
     Object.keys(groupedWords).forEach(lang => {
       const wordsInLang = groupedWords[lang];
       const shuffled = [...wordsInLang].sort(() => 0.5 - Math.random());
@@ -117,41 +94,19 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
   }, [allLanguages]);
 
+  // --- INITIAL MAP POPULATION ---
   useEffect(() => {
-    const fetchInitialWords = async () => {
-      setIsLoading(true);
-      
-      const { data: rawData, error } = await supabase.rpc('get_random_words', { limit_count: 2000 });
-      const { data: newsData, error: newsError } = await supabase.from('news').select('id, text');
-      if (!newsError) setNewsItems(newsData || []);
+    if (!isLoading && sidebarWords.length > 0) {
+        setCurrentFilteredList(sidebarWords);
 
-      if (error) {
-        console.error('Veri çekme hatası:', error);
-        setTimeout(() => setIsLoading(false), 1000);
-      } else if (rawData) {
-        const formattedWords: Word[] = rawData.map((w: any) => ({
-            id: w.id,
-            word: w.word,
-            originLanguage: w.originLanguage || w.originlanguage || w.origin_language || 'Bilinmiyor',
-            period: w.period,
-            source: w.source,
-            date: w.date
-        }));
-        
-        setSidebarWords(formattedWords);
-        setCurrentFilteredList(formattedWords); 
-        
-        // Initial generation
-        const initialSet = generateMapWords(formattedWords, 5);
+        // Generate default map
+        const initialSet = generateMapWords(sidebarWords, 5);
         setWordsOnMap(initialSet);
         setDefaultMapWords(initialSet);
+    }
+  }, [isLoading, sidebarWords, generateMapWords]);
 
-        setTimeout(() => { setIsLoading(false); }, 1500);
-      }
-    };
-    fetchInitialWords();
-  }, [generateMapWords]);
-
+  // --- CENTRAL FILTERING (Map & Time) ---
   const mapSourceList = useMemo(() => {
     return isMapFilterActive ? currentFilteredList : sidebarWords;
   }, [isMapFilterActive, currentFilteredList, sidebarWords]);
@@ -167,6 +122,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         return wDate <= selectedYear;
     });
 
+    // Default Case (No Filter, Present Year, Default Limit) -> Use Cached
     if (!isMapFilterActive && selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5) {
         setWordsOnMap(defaultMapWords);
     } else {
@@ -174,6 +130,9 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         setWordsOnMap(newMapSet);
     }
   }, [selectedYear, mapSourceList, isMapFilterActive, defaultMapWords, generateMapWords, limitPerLang]);
+
+
+  // --- HANDLERS ---
 
   const handleFilterChange = (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string, limit: number) => {
     setCurrentFilteredList(filteredWords);
@@ -183,9 +142,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     setLimitPerLang(limit);
   };
 
-  const handleWordSelect = (selectedWord: Word) => {
+  const handleWordSelect = useCallback((selectedWord: Word) => {
     if (!allLanguages) return;
-
     const languageData = allLanguages.find(lang => 
       lang.language.toLowerCase() === selectedWord.originLanguage.trim().toLowerCase()
     );
@@ -199,32 +157,56 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     } else {
       const newCoordinates = getRandomCoordinatesInBoundingBox(languageData);
       const newWordOnMap: WordOnMap = { ...selectedWord, coordinates: newCoordinates };
-      setWordsOnMap(prevWords => [...prevWords, newWordOnMap]);
+      setWordsOnMap(prev => [...prev, newWordOnMap]);
       setMapFlyToTarget(newCoordinates);
     }
-  };
+  }, [allLanguages, wordsOnMap]);
 
   const handleMarkerClick = (word: WordOnMap) => { setDetailPanelWord(word); };
-  const handleMapClick = () => { };
-  const handlePopupPositionUpdate = (newPosition: { x: number, y: number }) => { };
   
-  const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
   const handleQuickFilter = (type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
   };
+
   const toggleSidebar = () => setIsSidebarVisible(prev => !prev);
+  const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
+
+  // --- URL SYNC ---
+  useEffect(() => {
+    if (!router.isReady) return;
+    const currentQuery = router.query.word;
+    if (detailPanelWord) {
+        if (currentQuery !== detailPanelWord.word) {
+            router.push(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
+        }
+    } else {
+        if (currentQuery) router.push('/', undefined, { shallow: true });
+    }
+  }, [detailPanelWord, router.isReady]);
+
+  useEffect(() => {
+    if (!router.isReady || sidebarWords.length === 0) return;
+    const queryWord = router.query.word;
+    if (queryWord && typeof queryWord === 'string') {
+        if (detailPanelWord?.word !== queryWord) {
+            const target = sidebarWords.find(w => w.word.toLowerCase() === queryWord.toLowerCase());
+            if (target) handleWordSelect(target);
+        }
+    } else {
+        if (detailPanelWord) setDetailPanelWord(null);
+    }
+  }, [router.isReady, router.query.word, sidebarWords, handleWordSelect]);
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>
-      <Head>
-        <title>Etimoloji Haritası</title>
-        <meta name="description" content="Türkçe kelimelerin etimolojik köken haritası" />
-      </Head>
+      
+      <MetaHead selectedWord={detailPanelWord} />
 
       <LoadingScreen isLoading={isLoading} />
       <AboutButton onClick={toggleAboutPanel} />
       <StatsButton onClick={() => setIsStatsPanelOpen(true)} />
+      
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
       
@@ -241,7 +223,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
           wordsOnMap={wordsOnMap} 
           mapFlyToTarget={mapFlyToTarget} 
           onMarkerClick={handleMarkerClick}
-          onMapClick={handleMapClick}
+          onMapClick={() => {}} 
           selectedWordId={detailPanelWord?.id || null} 
         />
       </main>

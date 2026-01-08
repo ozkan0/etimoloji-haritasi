@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import VerticalBarChart from './graphs/VerticalBarChart';
+import { supabase } from '../../lib/supabaseClient';
+import VerticalBarChart from '../features/graphs/VerticalBarChart';
 
 interface StatsPanelProps {
   isOpen: boolean;
