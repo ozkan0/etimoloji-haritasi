@@ -314,7 +314,7 @@ html, body {
 /* Glass Shimmer Effect */
 @keyframes glass-shimmer {
   0% { transform: translateX(-150%) skewX(-20deg); }
-  40% { transform: translateX(300%) skewX(-20deg); }
+  50% { transform: translateX(300%) skewX(-20deg); }
   100% { transform: translateX(300%) skewX(-20deg); }
 }
 
@@ -333,7 +333,7 @@ html, body {
     rgba(255, 0, 0, 0) 100%
   );
   transform: translateX(-150%) skewX(-20deg);
-  animation: glass-shimmer 7s infinite;
+  animation: glass-shimmer 4s infinite;
   pointer-events: none;
 }
 
