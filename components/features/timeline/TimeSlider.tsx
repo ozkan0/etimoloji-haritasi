@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { APP_CONFIG } from '../../../lib/constants';
 
 interface TimeSliderProps {
   year: number;
@@ -9,8 +10,8 @@ interface TimeSliderProps {
 }
 
 const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isRightOpen, disabled = false }) => {
-  const minYear = 1000;
-  const maxYear = 2026;
+  const minYear = APP_CONFIG.MIN_YEAR;
+  const maxYear = APP_CONFIG.MAX_YEAR;
 
   const getPercentage = () => {
     return ((year - minYear) / (maxYear - minYear)) * 100;

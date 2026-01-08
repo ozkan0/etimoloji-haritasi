@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const AboutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const { theme } = useTheme();

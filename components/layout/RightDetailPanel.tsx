@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Word } from '../types/types';
-import SubmissionModal from './SubmissionModal'; 
+import { Word } from '../../types/types';
+import SubmissionModal from '../ui/SubmissionModal';
+// IMPORT SERVICE
+import { getWordMeaning, getAiEtymology } from '../../lib/api';
 
 interface LiveTdkData {
   meaning: string;
@@ -20,8 +22,7 @@ const getFlagUrl = (lang: string) => {
     'Fransızca': 'fr', 'Türkçe': 'tr', 'Farsça': 'ir', 'İtalyanca': 'it', 'İngilizce': 'gb',
     'Arapça': 'sa', 'Almanca': 'de', 'Yunanca': 'gr', 'Hırvatça': 'hr', 'Çekçe': 'cz',
     'Japonca': 'jp', 'İspanyolca': 'es', 'Rusça': 'ru', 'Bulgarca': 'bg', 'Macarca': 'hu',
-    'Moğolca': 'mn', 'Sogdca': 'ir', 'Rumca': 'gr', 'Sırpça': 'rs', 'Ermenice': 'am',
-    'Latince': 'va'
+    'Moğolca': 'mn', 'Sogdca': 'ir', 'Rumca': 'gr', 'Sırpça': 'rs', 'Latince': 'va'
   };
   const code = codeMap[lang];
   return code ? `https://flagcdn.com/w40/${code}.png` : null;
@@ -41,9 +42,11 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
+  // --- AI ETYMOLOGY STATE ---
   const [aiDetails, setAiDetails] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
+  // --- SUBMISSION MODAL STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'suggestion' | 'report'>('suggestion');
   const [isReported, setIsReported] = useState(false);
@@ -61,30 +64,30 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
       setAiDetails(null); 
       setIsAiLoading(false);
 
-      fetch(`/api/getTdkMeaning?word=${encodeURI(word.word)}`, { signal: controller.signal })
-        .then((res) => res.json())
+      // --- UPDATED API CALL ---
+      getWordMeaning(word.word)
         .then((data) => {
-          if (isMounted) {
-            setLiveData({ 
-                meaning: data.meaning || 'TDK kaydı bulunamadı.',
-                example: data.example 
-            });
-          }
+            if (isMounted) {
+                setLiveData({ 
+                    meaning: data.meaning,
+                    example: data.example 
+                });
+            }
         })
         .catch((err) => {
-          if (err.name !== 'AbortError' && isMounted) {
-            console.error(err);
-            setLiveData({ meaning: 'Bağlantı hatası.', example: null });
-          }
+            if (isMounted) {
+                console.error(err);
+                setLiveData({ meaning: 'Bağlantı hatası.', example: null });
+            }
         })
         .finally(() => {
-          if (isMounted) setIsLoading(false);
+            if (isMounted) setIsLoading(false);
         });
     }
 
     return () => {
       isMounted = false;
-      controller.abort();
+      controller.abort(); // Note: Our api service wrapper doesn't expose abort signal yet, but this is fine for now
       window.speechSynthesis.cancel();
     };
   }, [word]);
@@ -102,14 +105,18 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
+  // --- UPDATED AI FETCH HANDLER ---
   const handleFetchAiDetails = async () => {
     if (!word) return;
     setIsAiLoading(true);
     try {
-      const response = await fetch(`/api/get-ai-details?word=${encodeURIComponent(word.word)}`);
-      const data = await response.json();
+      const data = await getAiEtymology(word.word);
       setAiDetails(data.details || "Analiz yapılamadı.");
-    } catch (error) { setAiDetails("Bağlantı hatası."); } finally { setIsAiLoading(false); }
+    } catch (error) { 
+      setAiDetails("Bağlantı hatası."); 
+    } finally { 
+      setIsAiLoading(false); 
+    }
   };
 
   const handleOpenSuggestion = () => { setModalType('suggestion'); setIsModalOpen(true); };

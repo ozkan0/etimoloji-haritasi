@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import L, { LatLngBoundsExpression } from 'leaflet';
-import { WordOnMap } from '../types/types';
-import { useTheme } from '../context/ThemeContext';
+import { WordOnMap } from '../../types/types';
+import { useTheme } from '../../context/ThemeContext';
 
 const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
   useMapEvents({ click: () => onClick() });

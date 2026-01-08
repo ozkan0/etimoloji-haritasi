@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { albertSans } from '../styles/fonts';
+import { albertSans } from '../../../styles/fonts';
 
 interface NewsTickerProps {
   newsItems: { id: number; text: string }[];

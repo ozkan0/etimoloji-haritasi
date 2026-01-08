@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Word } from '../types/types';
+import { Word } from '../../types/types'; 
+import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES } from '../../lib/constants';
 
 interface LeftSidebarProps {
   allWords: Word[];
@@ -184,13 +185,25 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
 
   const segmentContainerStyle: React.CSSProperties = { display: 'flex', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '4px', gap: '4px', marginTop: '10px' };
   const getSegmentStyle = (periodName: string, isActive: boolean): React.CSSProperties => {
-    let backgroundColor = 'transparent'; let borderColor = 'transparent';
+    let backgroundColor = 'transparent'; 
+    let borderColor = 'transparent';
+
     if (isActive) {
         switch (periodName) {
-            case 'Osmanlı Öncesi': backgroundColor = '#D97706'; borderColor = '#B45309'; break; 
-            case 'Osmanlı': backgroundColor = '#166534'; borderColor = '#14532D'; break; 
-            case 'Cumhuriyet': backgroundColor = '#B91C1C'; borderColor = '#991B1B'; break; 
-            default: backgroundColor = 'var(--detailspanel-header-bg)';
+            case PERIOD_NAMES.OSMANLI_ONCESI: 
+                backgroundColor = PERIOD_COLORS.OSMANLI_ONCESI.bg; 
+                borderColor = PERIOD_COLORS.OSMANLI_ONCESI.border; 
+                break;
+            case PERIOD_NAMES.OSMANLI: 
+                backgroundColor = PERIOD_COLORS.OSMANLI.bg; 
+                borderColor = PERIOD_COLORS.OSMANLI.border; 
+                break;
+            case PERIOD_NAMES.CUMHURIYET: 
+                backgroundColor = PERIOD_COLORS.CUMHURIYET.bg; 
+                borderColor = PERIOD_COLORS.CUMHURIYET.border; 
+                break;
+            default: 
+                backgroundColor = PERIOD_COLORS.DEFAULT;
         }
     }
     return {
@@ -220,9 +233,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
           <CustomDropdown options={availableLanguages} value={activeLanguageFilter} onChange={setActiveLanguageFilter} />
 
           <div style={segmentContainerStyle}>
-             <div style={getSegmentStyle('Osmanlı Öncesi', activePeriodFilter === 'Osmanlı Öncesi')} onClick={() => setActivePeriodFilter('Osmanlı Öncesi')}>Osmanlı Öncesi</div>
-             <div style={getSegmentStyle('Osmanlı', activePeriodFilter === 'Osmanlı')} onClick={() => setActivePeriodFilter('Osmanlı')}>Osmanlı</div>
-             <div style={getSegmentStyle('Cumhuriyet', activePeriodFilter === 'Cumhuriyet')} onClick={() => setActivePeriodFilter('Cumhuriyet')}>Cumhuriyet</div>
+             <div style={getSegmentStyle('Osmanlı Öncesi', activePeriodFilter === 'Osmanlı Öncesi')} onClick={() => setActivePeriodFilter(PERIOD_NAMES.OSMANLI_ONCESI as any)}>Osmanlı Öncesi</div>
+             <div style={getSegmentStyle('Osmanlı', activePeriodFilter === 'Osmanlı')} onClick={() => setActivePeriodFilter(PERIOD_NAMES.OSMANLI as any)}>Osmanlı</div>
+             <div style={getSegmentStyle('Cumhuriyet', activePeriodFilter === 'Cumhuriyet')} onClick={() => setActivePeriodFilter(PERIOD_NAMES.CUMHURIYET as any)}>Cumhuriyet</div>
           </div>
 
           <div style={{marginTop: '15px', padding: '0 4px'}}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { albertSans } from '../styles/fonts';
+import { albertSans } from '../../styles/fonts';
+import { submitFeedback } from '../../lib/api';
 
 interface SubmissionModalProps {
   isOpen: boolean;
@@ -67,20 +68,14 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
     setErrorMsg(null);
 
     try {
-      const response = await fetch('/api/submitFeedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await submitFeedback({
           type,
           category,
           description,
           wordId,
           wordName,
           userAgent: navigator.userAgent
-        }),
       });
-
-      if (!response.ok) throw new Error('Gönderim başarısız oldu.');
 
       onSuccess();
       onClose();
