@@ -1,9 +1,7 @@
-import { Lora } from 'next/font/google';
+import { Albert_Sans } from 'next/font/google';
 
-export const lora = Lora({
+export const albertSans = Albert_Sans({
   subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-lora',
-  style: ['normal', 'italic'],
   display: 'swap',
+  variable: '--font-albert-sans',
 });

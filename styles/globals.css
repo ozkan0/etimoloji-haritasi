@@ -5,7 +5,7 @@
 html, body {
   padding: 0;
   margin: 0;
-  font-family: var(--font-lora), serif;
+  font-family: var(--font-albert-sans), sans-serif;
   font-size: 18px;
   font-weight: 500;
   transition: background-color 0.3s ease;
@@ -92,7 +92,7 @@ html, body {
   min-width: 30px;
   font-size: 11px;
   padding: 4px 10px;
-  font-family: var(--font-lora), serif;
+  font-family: var(--font-albert-sans), sans-serif;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   display: flex;
@@ -120,7 +120,7 @@ html, body {
   background-color: var(--detailspanel-header-bg);
   color: white;
   border-color: white;
-  transform: translate(-50%, -50%) scale(1.2) !important;
+  transform: translate(-50%, -50%) scale(1.05) !important;
   box-shadow: 0 10px 25px rgba(0, 148, 255, 0.4);
   z-index: 10000 !important;
 }

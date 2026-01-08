@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { lora } from '../styles/fonts';
+import { albertSans } from '../styles/fonts';
 
 interface SubmissionModalProps {
   isOpen: boolean;
@@ -128,7 +128,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
 
   // Portal Content
   const modalContent = (
-    <div style={overlayStyle} onClick={onClose} className={lora.className}> 
+    <div style={overlayStyle} onClick={onClose} className={albertSans.className}> 
       <style>{`
         @keyframes fadeInScale {
           from { opacity: 0; transform: scale(0.95); }

@@ -6,7 +6,7 @@ const StatsButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const buttonStyle: React.CSSProperties = {
     position: 'absolute',
     top: '1px',
-    right: '87px', 
+    right: '89px', 
     zIndex: 1000,
     cursor: 'pointer',
     background: 'var(--sidebar-header-bg)',
