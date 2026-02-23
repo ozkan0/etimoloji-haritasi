@@ -1,85 +1,95 @@
-
 # Etimoloji Haritası
 
-**Türkçe Kelimelerin Köken Haritası**
+**Türkçe Kelimelerin Köken Yolculuğu**
+Bu proje, Türkçedeki kelimelerin etimolojik kökenlerini, tarihsel gelişimlerini ve coğrafi dağılımlarını interaktif bir dünya haritası üzerinde görselleştiren, yapay zeka destekli modern bir web uygulamasıdır.
 
-Bu proje, Türkçedeki kelimelerin etimolojik kökenlerini interaktif bir dünya haritası üzerinde görselleştiren bir web uygulamasıdır.
+[Canlı Web Adresi](https://etimoloji-haritasi.vercel.app/)
 
-<img width="1920" height="956" alt="image" src="https://github.com/user-attachments/assets/1744c98f-911b-49c2-bbe8-002aeec25c0f" />
+<img width="1919" height="949" alt="image" src="https://github.com/user-attachments/assets/9076faa7-9ef3-48f1-a7d0-007450ef05de" />
 
-Canlı demo (vercel):    https://etimoloji-haritasi.vercel.app/
-## Proje Hakkında
+---
 
-Etimoloji Haritası, Türkçe kelimelerin kelime kökenlerini karşılaştırılabilir kaynaklarla, analitik verilerle pratik ve interaktif bir arayüzde sunmayı hedefler. Harita üzerinde kelimelerin dağılımı; merakı, öğrenme ve araştırma verimliliğini artırır.
+## Öne Çıkan Özellikler
 
-Bu platformun interaktif anlatımı ve toplu veri sunması sayesinde lise ve ortaokul öğrencilerinden dil meraklılarına kadar geniş bir kitle için değerli ve eğitici bir kaynak haline gelebilecek.
+### İnteraktif Harita Deneyimi
+*   **Dinamik Görselleştirme:** Kelimeler, köken aldıkları ülkelere göre harita üzerinde **rastgele ama sınırların içinde** kalacak şekilde (Point-in-Polygon algoritması ile) yerleştirilir.
+*   **Özelleştirilmiş İşaretçiler (Markers):** Kelimeler, modern "hap" (pill) tasarımıyla ve yakınlaştırma (zoom) seviyesine göre dinamik boyutlanan işaretçilerle gösterilir. Seçili kelime, özel bir parlayan efektle vurgulanır.
+*   **Akıllı Kümeleme:** Harita üzerinde görsel yoğunluğu yönetmek için ülke başına kelime limiti kullanıcı tarafından ayarlanabilir.
 
-### Temel Özellikler
+### Yapay Zeka (AI) Entegrasyonu
+*   **Derinlemesine Analiz:** Google **Gemini 2.5 Flash** modeli entegrasyonu sayesinde, her kelime için anlık, detaylı ve hikayeleştirilmiş bir etimolojik analiz sunulur. "Detaylı Köken Analizi" butonu, kelimenin sadece kökenini değil, kültürel yolculuğunu ve tarihsel değişimini de anlatır.
 
-*   **İnteraktif Dünya Haritası:** Kelimeler, köken dillerine göre coğrafi konumda, kaydırılabilir ve yakınlaştırılabilir açık kaynaklı harita üzerinde belirir.
-*   **Özel Kelime İşaretçileri:** Harita üzerinde varsayılan ikonlar yerine özelleştirilmiş kelime işaretçileri kullanılmıştır.
-*   **Filtrelenebilir Kelime Listesi:** Sol panelde bulunan tüm kelimeleri anlık olarak arama, köken diline veya döneme göre filtreleme.
-*   **Bilgilendirici Pencereler:** Haritadaki bir kelimeye tıklandığında, o kelimenin kökeni ve örnek cümle kullanımı gibi temel bilgileri gösteren bir pencere açılır.
-*   **Detay Paneli:** Kullanıcılar, kelime hakkında daha fazla bilgi için ve farklı kaynaklar, ilgili referanslar gibi tüm detaylara sağ panelden ulaşabilirler.
-*   **Canlı Veri:** TDK gibi güvenilir sözlüklerden ek bilgiler için detay paneline anlık ve otomatik veri çekebilme.
+### Zaman Yolculuğu (Time Slider)
+*   **Tarihsel Filtreleme:** Ekranın altındaki zaman çizelgesi (Timeline) ile kelimeleri dilimize giriş tarihlerine (1000 - 2026) göre filtreleyebilirsiniz. Slider hareket ettikçe harita anlık olarak güncellenir.
+*   **Dönemlere Göre Ayrım:** Osmanlı Öncesi, Osmanlı ve Cumhuriyet dönemlerine göre hızlı filtreleme seçenekleri.
 
-### Kullanılan Teknolojiler
+### Canlı Veri & Detaylar
+*   **TDK Entegrasyonu:** Kelimelerin güncel anlamları ve örnek cümleleri, **Türk Dil Kurumu** API'sinden canlı olarak çekilir.
+*   **Zengin İçerik:** Her kelime için köken dili bayrağı, giriş tarihi, kaynak bilgisi ve "Etimoloji Türkçe" ile "Google" gibi dış kaynaklara hızlı erişim linkleri bulunur.
 
-*   **Framework:** Next.js
-*   **Dil:** TypeScript, Html, Css
-*   **UI Kütüphanesi:** React
-*   **Harita:** Leaflet & Jawg Maps
-*   **Veri Yönetimi:** Supabase DB & Statik JSON
+### Veri Analizi Paneli
+*   **İstatistikler:** Veritabanındaki kelimelerin dil ve dönem dağılımlarını gösteren, görsel olarak zenginleştirilmiş (Chart) bir analiz paneli.
 
-## Projeyi Yerel Makinede Çalıştırma
+### Modern & Duyarlı Arayüz (UI/UX)
+*   **Glassmorphism Tasarım:** Şeffaf, bulanık arka planlar ve modern gradyanlar.
+*   **Koyu/Açık Mod:** Sistem temasına duyarlı veya manuel değiştirilebilir tema desteği.
+*   **Mobil Uyumlu:** Telefon ve tabletlerde kusursuz çalışan responsive tasarım.
+*   **NewsTicker:** Üst bantta akan, dil üzerine ilginç bilgiler ve sözler.
+---
 
-Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin.
+## Kullanılan Teknolojiler
 
-### Gereksinimler
+*   **Framework:** [Next.js](https://nextjs.org/) (React)
+*   **Dil:** [TypeScript](https://www.typescriptlang.org/)
+*   **Harita:** [Leaflet](https://leafletjs.com/) & [React-Leaflet](https://react-leaflet.js.org/)
+*   **Harita Sağlayıcı:** [Jawg Maps](https://www.jawg.io/)
+*   **Veritabanı:** [Supabase](https://supabase.com/) (PostgreSQL)
+*   **Yapay Zeka:** [Google Gemini API](https://ai.google.dev/)
+*   **Veri Görselleştirme:** Point-in-Polygon (GeoJSON işlemleri)
+*   **Stil:** CSS3, Styled-JSX & CSS Variables
+---
 
-*   Node.js (v18 veya üstü)
-*   npm
+## Installation & Local Development
 
-### Kurulum
+Follow these steps to run the project on your local machine.
 
-1.  **Repository'yi klonlayın:**
-    ```bash
-    git clone https://github.com/kullanici-adiniz/etimoloji-haritasi.git
-    ```
+### Prerequisites
+*   Node.js (v18+)
+*   npm or yarn
 
-2.  **Proje dizinine gidin:**
-    ```bash
-    cd etimoloji-haritasi
-    ```
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/ozkan0/etimoloji-haritasi.git
+cd etimoloji-haritasi
+```
 
-3.  **Gerekli paketleri yükleyin:**
-    ```bash
-    npm install
-    ```
+### Step 2: Install Dependencies
+```bash
+npm install
+# or
+yarn install
+```
 
-4.  **Geliştirme sunucusunu başlatın:**
-    ```bash
-    npm run dev
-    ```
+### Step 3: Configure Environment Variables
+Create a `.env.local` file in the root directory and populate it with your own API keys:
 
-5.  Tarayıcınızda `http://localhost:3000` adresini açın.
+```env
+# Supabase Connection
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-## Planlanan Yeni Özellikler (Roadmap)
+# Google Gemini AI (For Etymological Analysis)
+GEMINI_API_KEY=your-gemini-api-key
 
-Bu proje aktif olarak geliştirilmektedir. Gelecekte eklenmesi planlanan bazı özellikler:
+# Map Tile Provider (Jawg Maps)
+NEXT_PUBLIC_JAWG_TOKEN=your-jawg-access-token
+```
 
-*   **Mobil Uyumluluk:** Uygulamanın telefon ve tablet gibi küçük ekranlarda da sorunsuz ve estetik bir şekilde çalışması için arayüzün iyileştirilmesi.
-*   **Hızlı Filtreleme:** Detay paneli içeriğindeki köken dil ve dönem değerlerine göre tek buton tıklamasıyla spesifik dile/döneme göre anında filtreleyebilme.
-*   **Kullanıcı Katkısı:** Kullanıcıların yeni kelime önermesi veya mevcut verilerde düzeltme talep etmesi için bir form sistemi.
-*   **Gelişmiş Görselleştirmeler:** Kelime detayları panelinde, kelimenin kullanım sıklığı gibi verileri gösteren basit grafikler eklenmesi.
-*   **URL ile Durum Paylaşımı:** Belirli bir kelime seçiliyken veya bir filtre uygulanmışken, o anki görünümün URL üzerinden paylaşılabilmesi.
-*   ✅ **Karanlık/Aydınlık Mod:** Kullanıcıların tercihine göre arayüz temasını değiştirebilmesi için bir switch.
-*   ✅ **Veritabanı Entegrasyonu:** Proje büyüdükçe, kelime verilerini yönetmek için JSON dosyaları yerine Supabase veya Firebase gibi bir veritabanı çözümüne geçilmesi.
+### Step 4: Start the Development Server
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-## Katkıda Bulunma
-
-Katkıda bulunmak isterseniz, lütfen bir "issue" açarak veya bir "pull request" göndererek iletişime geçin. Tüm katkılara açığım.
-
-## Lisans
-
-Bu proje MIT Lisansı ile lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına bakın.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser to view the application.
