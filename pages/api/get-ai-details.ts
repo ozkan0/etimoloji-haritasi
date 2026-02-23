@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { supabase } from '../../lib/supabaseClient';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -13,7 +14,20 @@ export default async function handler(
     return res.status(400).json({ error: 'Word parameter is required' });
   }
 
+  const normalizedWord = word.toLowerCase().trim();
+
   try {
+    // 1. Check cache first
+    const { data: cached } = await supabase
+      .from('word_cache')
+      .select('ai_details')
+      .eq('word', normalizedWord)
+      .single();
+
+    if (cached && cached.ai_details) {
+      return res.status(200).json({ details: cached.ai_details });
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
@@ -32,6 +46,13 @@ export default async function handler(
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text().trim();
+
+    // 2. Cache the result
+    await supabase.from('word_cache').upsert({
+      word: normalizedWord,
+      ai_details: text,
+      updated_at: new Date().toISOString()
+    });
 
     res.status(200).json({ details: text });
 

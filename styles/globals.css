@@ -2,7 +2,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   padding: 0;
   margin: 0;
   font-family: var(--font-albert-sans), sans-serif;
@@ -21,7 +22,7 @@ html, body {
   --sidebar-text-primary: #212529;
   --sidebar-text-secondary: #6c757d;
   --sidebar-item-hover-bg: #e9ecef;
-  
+
   --detailspanel-header-bg: #0094ff;
   --detailspanel-header-bg-hover: #007acc;
 
@@ -36,7 +37,7 @@ html, body {
   --popup-button-bg: #0094ff;
   --popup-button-text: white;
   --popup-button-hover-bg: #007acc;
-  
+
   --marker-bg: #ffffff;
   --marker-text: #1e293b;
   --marker-border: #94a3b8;
@@ -51,10 +52,10 @@ html, body {
   --sidebar-text-primary: #f5f5f5;
   --sidebar-text-secondary: #bebebe;
   --sidebar-item-hover-bg: #303849;
-  
+
   --detailspanel-header-bg: #077691;
   --detailspanel-header-bg-hover: #055f7a;
-  
+
   --main-buttons-bg: #274472;
   --main-buttons-hover-bg: #1a2a4d;
 
@@ -86,7 +87,7 @@ html, body {
 .modern-marker {
   background-color: var(--marker-bg);
   color: var(--marker-text);
-  border: 1px solid var(--marker-border); 
+  border: 1px solid var(--marker-border);
   border-radius: 999px;
   width: max-content;
   min-width: 30px;
@@ -94,7 +95,7 @@ html, body {
   padding: 4px 10px;
   font-family: var(--font-albert-sans), sans-serif;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,9 +110,20 @@ html, body {
 }
 
 @keyframes red-pulse {
-  0% { border-color: var(--marker-border); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-  50% { border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
-  100% { border-color: var(--marker-border); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  0% {
+    border-color: var(--marker-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  50% {
+    border-color: #ef4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+  }
+
+  100% {
+    border-color: var(--marker-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* Active State */
@@ -126,23 +138,36 @@ html, body {
 }
 
 /* Zoom Levels */
-.map-zoom-low .modern-marker { font-size: 16px; padding: 6px 14px; }
-.map-zoom-mid .modern-marker { font-size: 16px; padding: 6px 14px; }
-.map-zoom-high .modern-marker { font-size: 17px; padding: 8px 16px; }
+.map-zoom-low .modern-marker {
+  font-size: 16px;
+  padding: 6px 14px;
+}
+
+.map-zoom-mid .modern-marker {
+  font-size: 16px;
+  padding: 6px 14px;
+}
+
+.map-zoom-high .modern-marker {
+  font-size: 17px;
+  padding: 8px 16px;
+}
 
 /* Interactions */
 .word-marker-container:hover .modern-marker {
   z-index: 9999;
   animation: none;
   border-color: var(--main-buttons-bg);
-  transform: translate(-50%, -50%) scale(1.05); 
+  transform: translate(-50%, -50%) scale(1.05);
   background-color: var(--marker-bg);
   color: var(--marker-text);
 }
+
 .word-marker-container:hover .modern-marker.active {
   background-color: var(--detailspanel-header-bg);
   color: white;
 }
+
 .modern-marker:active {
   transform: translate(-50%, -50%) scale(0.95) !important;
   transition: transform 0.05s ease-out;
@@ -193,6 +218,7 @@ html, body {
   justify-content: center;
   gap: 8px;
 }
+
 .filter-button-modern:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
@@ -201,7 +227,7 @@ html, body {
   max-height: 0;
   overflow: hidden;
   transition: all 0.3s ease-in-out;
-  background-color: rgba(0, 0, 0, 0.15); 
+  background-color: rgba(0, 0, 0, 0.15);
   padding: 0 15px;
   border-radius: 12px;
   margin-top: 10px;
@@ -209,8 +235,9 @@ html, body {
   flex-direction: column;
   gap: 12px;
 }
+
 .filter-panel-modern.open {
-  max-height: 200px; 
+  max-height: 200px;
   padding: 15px;
 }
 
@@ -231,6 +258,7 @@ html, body {
   background-repeat: no-repeat;
   background-size: 1.2em 1.2em;
 }
+
 [data-theme='dark'] .modern-select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
@@ -254,6 +282,7 @@ html, body {
   font-size: 20px;
   transition: left 0.3s ease-in-out;
 }
+
 .toggle-sidebar-button:hover {
   background-color: var(--main-buttons-hover-bg);
 }
@@ -262,7 +291,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  right:4%;
+  right: 4%;
   position: absolute;
   width: 32px;
   height: 32px;
@@ -275,6 +304,7 @@ html, body {
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
+
 .icon-close-button:hover {
   background-color: rgba(255, 255, 255, 0.4);
 }
@@ -299,13 +329,27 @@ html, body {
   visibility: visible;
   transition: opacity 0.5s ease-in-out, visibility 0.3s ease-in-out;
 }
+
 .loading-screen.finished {
   opacity: 0;
   visibility: hidden;
 }
-.loading-screen .loading-content { text-align: center; }
-.loading-screen h1 { font-size: 3rem; font-weight: 700; margin: 0; }
-.loading-screen p { font-size: 1.2rem; margin-top: 10px; opacity: 0.8; }
+
+.loading-screen .loading-content {
+  text-align: center;
+}
+
+.loading-screen h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.loading-screen p {
+  font-size: 1.2rem;
+  margin-top: 10px;
+  opacity: 0.8;
+}
 
 .leaflet-top.leaflet-right .leaflet-control-zoom {
   margin-top: 45px;
@@ -313,25 +357,35 @@ html, body {
 
 /* Glass Shimmer Effect */
 @keyframes glass-shimmer {
-  0% { transform: translateX(-150%) skewX(-20deg); }
-  50% { transform: translateX(300%) skewX(-20deg); }
-  100% { transform: translateX(300%) skewX(-20deg); }
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+
+  50% {
+    transform: translateX(300%) skewX(-20deg);
+  }
+
+  100% {
+    transform: translateX(300%) skewX(-20deg);
+  }
 }
 
 .shiny-effect {
   position: relative;
   overflow: hidden;
 }
+
 .shiny-effect::after {
   content: "";
   position: absolute;
-  top: 0; left: 0; width: 60%; height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 0, 0, 0) 0%,
-    rgba(220, 50, 50, 0.4) 50%,
-    rgba(255, 0, 0, 0) 100%
-  );
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right,
+      rgba(255, 0, 0, 0) 0%,
+      rgba(220, 50, 50, 0.4) 50%,
+      rgba(255, 0, 0, 0) 100%);
   transform: translateX(-150%) skewX(-20deg);
   animation: glass-shimmer 4s infinite;
   pointer-events: none;
@@ -339,9 +393,17 @@ html, body {
 
 /* Green Pulse Effect */
 @keyframes dot-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
-  70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+  }
 }
 
 .ai-ready-dot {
@@ -351,4 +413,61 @@ html, body {
   border-radius: 50%;
   animation: dot-pulse 2s infinite;
   display: inline-block;
+}
+
+/* --- WORD OF THE DAY --- */
+
+.word-of-the-day-card {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  color: white;
+  padding: 12px 16px;
+  z-index: 10;
+  cursor: pointer;
+  border-bottom-left-radius: 22px;
+  border-bottom-right-radius: 22px;
+  background: linear-gradient(135deg, #274472 0%, #004e92 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 -2px 10px rgba(0, 78, 146, 0.2);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+[data-theme='dark'] .word-of-the-day-card {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0c4a6e 100%);
+  border-top: 1px solid rgba(14, 165, 233, 0.4);
+}
+
+.word-of-the-day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 -4px 15px rgba(0, 148, 255, 0.3);
+}
+
+.word-of-the-day-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fbbf24;
+  margin-bottom: 4px;
+}
+
+.word-of-the-day-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.word-of-the-day-lang {
+  font-size: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
 }
