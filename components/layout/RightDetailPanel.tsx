@@ -199,11 +199,11 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                 </button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={getBadgeStyle('language', word.originLanguage)} title="Köken Dili" onClick={() => handleBadgeClick('language', word.originLanguage)}>
+                <span className="shiny-effect" style={getBadgeStyle('language', word.originLanguage)} title="Köken Dili" onClick={() => handleBadgeClick('language', word.originLanguage)}>
                   {getFlagUrl(word.originLanguage) && <img src={getFlagUrl(word.originLanguage)!} alt={word.originLanguage} style={{ width: '20px', height: '15px', borderRadius: '2px', objectFit: 'cover' }} />}
                   {word.originLanguage}
                 </span>
-                <span style={getBadgeStyle('period', word.period)} title="Girdiği Dönem" onClick={() => handleBadgeClick('period', word.period)}>
+                <span className="shiny-effect" style={getBadgeStyle('period', word.period)} title="Girdiği Dönem" onClick={() => handleBadgeClick('period', word.period)}>
                   {word.period}
                 </span>
                 {word.date && <span style={{ ...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default' }} title="İlk Tespit Tarihi">{word.date}</span>}
