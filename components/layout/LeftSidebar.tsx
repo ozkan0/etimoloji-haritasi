@@ -120,7 +120,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   const filteredWordsForList = useMemo(() => {
     return allWords
       .filter(word => {
-        const matchesSearch = word.word.toLowerCase().includes(activeSearchTerm.toLowerCase());
+        const matchesSearch = word.word.toLocaleLowerCase('tr-TR').includes(activeSearchTerm.toLocaleLowerCase('tr-TR'));
         const matchesLanguage = activeLanguageFilter === 'Tüm Diller' || word.originLanguage === activeLanguageFilter;
         const matchesPeriod = activePeriodFilter === 'Tüm Dönemler' || word.period === activePeriodFilter;
         return matchesSearch && matchesLanguage && matchesPeriod;
@@ -132,7 +132,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   const filteredWordsForMap = useMemo(() => {
     return allWords
       .filter(word => {
-        const matchesSearch = word.word.toLowerCase().includes(activeSearchTerm.toLowerCase());
+        const matchesSearch = word.word.toLocaleLowerCase('tr-TR').includes(activeSearchTerm.toLocaleLowerCase('tr-TR'));
         const matchesLanguage = activeLanguageFilter === 'Tüm Diller' || word.originLanguage === activeLanguageFilter;
         const matchesPeriod = activePeriodFilter === 'Tüm Dönemler' || word.period === activePeriodFilter;
         return matchesSearch && matchesLanguage && matchesPeriod;

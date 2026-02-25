@@ -145,7 +145,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const handleWordSelect = useCallback((selectedWord: Word) => {
     if (!allLanguages) return;
     const languageData = allLanguages.find(lang =>
-      lang.language.toLowerCase() === selectedWord.originLanguage.trim().toLowerCase()
+      lang.language.toLocaleLowerCase('tr-TR') === selectedWord.originLanguage.trim().toLocaleLowerCase('tr-TR')
     );
     if (!languageData || !languageData.boundingBox) return;
 
@@ -190,7 +190,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     const queryWord = router.query.word;
     if (queryWord && typeof queryWord === 'string') {
       if (detailPanelWord?.word !== queryWord) {
-        const target = sidebarWords.find(w => w.word.toLowerCase() === queryWord.toLowerCase());
+        const target = sidebarWords.find(w => w.word.toLocaleLowerCase('tr-TR') === queryWord.toLocaleLowerCase('tr-TR'));
         if (target) handleWordSelect(target);
       }
     } else {
