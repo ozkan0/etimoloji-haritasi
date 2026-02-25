@@ -28,7 +28,7 @@ import { useEtymologyData } from '../hooks/useEtymologyData';
 
 const MapComponent = dynamic(() => import('../components/map/Map'), {
   ssr: false,
-  loading: () => null, 
+  loading: () => null,
 });
 
 interface HomeProps {
@@ -45,11 +45,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
-  
+
   // --- MAP DATA STATES ---
   const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
-  const [defaultMapWords, setDefaultMapWords] = useState<WordOnMap[]>([]); 
-  
+  const [defaultMapWords, setDefaultMapWords] = useState<WordOnMap[]>([]);
+
   // --- SELECTION & FILTER STATES ---
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
@@ -78,13 +78,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     Object.keys(groupedWords).forEach(lang => {
       const wordsInLang = groupedWords[lang];
       const shuffled = [...wordsInLang].sort(() => 0.5 - Math.random());
-      const picked = shuffled.slice(0, limit); 
+      const picked = shuffled.slice(0, limit);
       selectedWords = [...selectedWords, ...picked];
     });
 
     return selectedWords.map((word: Word) => {
-      const languageData = allLanguages.find((lang: Language) => 
-        lang.language.toLowerCase() === word.originLanguage.trim().toLowerCase()
+      const languageData = allLanguages.find((lang: Language) =>
+        lang.language.toLocaleLowerCase('tr-TR') === word.originLanguage.trim().toLocaleLowerCase('tr-TR')
       );
       if (!languageData) return null;
       return {
@@ -97,12 +97,12 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   // --- INITIAL MAP POPULATION ---
   useEffect(() => {
     if (!isLoading && sidebarWords.length > 0) {
-        setCurrentFilteredList(sidebarWords);
+      setCurrentFilteredList(sidebarWords);
 
-        // Generate default map
-        const initialSet = generateMapWords(sidebarWords, 5);
-        setWordsOnMap(initialSet);
-        setDefaultMapWords(initialSet);
+      // Generate default map
+      const initialSet = generateMapWords(sidebarWords, 5);
+      setWordsOnMap(initialSet);
+      setDefaultMapWords(initialSet);
     }
   }, [isLoading, sidebarWords, generateMapWords]);
 
@@ -114,20 +114,20 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   useEffect(() => {
     if (mapSourceList.length === 0) return;
 
-    // Apply Time Filter
     const timeFilteredList = mapSourceList.filter(word => {
-        if (!word.date) return true;
-        const wDate = parseInt(String(word.date));
-        if (isNaN(wDate)) return true;
-        return wDate <= selectedYear;
+      if (isMapFilterActive) return true;
+
+      if (!word.date) return true;
+      const wDate = parseInt(String(word.date));
+      if (isNaN(wDate)) return true;
+      return wDate <= selectedYear;
     });
 
-    // Default Case (No Filter, Present Year, Default Limit) -> Use Cached
     if (!isMapFilterActive && selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5) {
-        setWordsOnMap(defaultMapWords);
+      setWordsOnMap(defaultMapWords);
     } else {
-        const newMapSet = generateMapWords(timeFilteredList, limitPerLang);
-        setWordsOnMap(newMapSet);
+      const newMapSet = generateMapWords(timeFilteredList, limitPerLang);
+      setWordsOnMap(newMapSet);
     }
   }, [selectedYear, mapSourceList, isMapFilterActive, defaultMapWords, generateMapWords, limitPerLang]);
 
@@ -144,11 +144,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   const handleWordSelect = useCallback((selectedWord: Word) => {
     if (!allLanguages) return;
-    const languageData = allLanguages.find(lang => 
+    const languageData = allLanguages.find(lang =>
       lang.language.toLowerCase() === selectedWord.originLanguage.trim().toLowerCase()
     );
     if (!languageData || !languageData.boundingBox) return;
-    
+
     setDetailPanelWord(selectedWord);
 
     const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
@@ -163,7 +163,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   }, [allLanguages, wordsOnMap]);
 
   const handleMarkerClick = (word: WordOnMap) => { setDetailPanelWord(word); };
-  
+
   const handleQuickFilter = (type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
@@ -177,11 +177,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     if (!router.isReady) return;
     const currentQuery = router.query.word;
     if (detailPanelWord) {
-        if (currentQuery !== detailPanelWord.word) {
-            router.push(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
-        }
+      if (currentQuery !== detailPanelWord.word) {
+        router.push(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
+      }
     } else {
-        if (currentQuery) router.push('/', undefined, { shallow: true });
+      if (currentQuery) router.push('/', undefined, { shallow: true });
     }
   }, [detailPanelWord, router.isReady]);
 
@@ -189,66 +189,66 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     if (!router.isReady || sidebarWords.length === 0) return;
     const queryWord = router.query.word;
     if (queryWord && typeof queryWord === 'string') {
-        if (detailPanelWord?.word !== queryWord) {
-            const target = sidebarWords.find(w => w.word.toLowerCase() === queryWord.toLowerCase());
-            if (target) handleWordSelect(target);
-        }
+      if (detailPanelWord?.word !== queryWord) {
+        const target = sidebarWords.find(w => w.word.toLowerCase() === queryWord.toLowerCase());
+        if (target) handleWordSelect(target);
+      }
     } else {
-        if (detailPanelWord) setDetailPanelWord(null);
+      if (detailPanelWord) setDetailPanelWord(null);
     }
   }, [router.isReady, router.query.word, sidebarWords, handleWordSelect]);
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>
-      
+
       <MetaHead selectedWord={detailPanelWord} />
 
       <LoadingScreen isLoading={isLoading} />
       <AboutButton onClick={toggleAboutPanel} />
       <StatsButton onClick={() => setIsStatsPanelOpen(true)} />
-      
+
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
-      
-      <LeftSidebar 
+
+      <LeftSidebar
         allWords={sidebarWords}
-        onWordSelect={handleWordSelect} 
-        isVisible={isSidebarVisible} 
-        onFilterChange={handleFilterChange} 
+        onWordSelect={handleWordSelect}
+        isVisible={isSidebarVisible}
+        onFilterChange={handleFilterChange}
         externalFilterTrigger={filterTrigger}
       />
 
       <main style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0 }}>
-        <MapComponent 
-          wordsOnMap={wordsOnMap} 
-          mapFlyToTarget={mapFlyToTarget} 
+        <MapComponent
+          wordsOnMap={wordsOnMap}
+          mapFlyToTarget={mapFlyToTarget}
           onMarkerClick={handleMarkerClick}
-          onMapClick={() => {}} 
-          selectedWordId={detailPanelWord?.id || null} 
+          onMapClick={() => { }}
+          selectedWordId={detailPanelWord?.id || null}
         />
       </main>
-      
-      <TimeSlider 
-        year={selectedYear} 
-        onChange={setSelectedYear} 
+
+      <TimeSlider
+        year={selectedYear}
+        onChange={setSelectedYear}
         isLeftOpen={isSidebarVisible}
         isRightOpen={detailPanelWord !== null}
-        disabled={isMapFilterActive} 
+        disabled={isMapFilterActive}
       />
 
       <NewsTicker newsItems={newsItems} />
       <ThemeSwitch />
-      
-      <RightDetailPanel 
-        word={detailPanelWord} 
-        onClose={() => setDetailPanelWord(null)} 
+
+      <RightDetailPanel
+        word={detailPanelWord}
+        onClose={() => setDetailPanelWord(null)}
         onFilterTrigger={handleQuickFilter}
         activeFilterLanguage={currentActiveLang}
         activeFilterPeriod={currentActivePeriod}
       />
-      <StatsPanel 
-        isOpen={isStatsPanelOpen} 
-        onClose={() => setIsStatsPanelOpen(false)} 
+      <StatsPanel
+        isOpen={isStatsPanelOpen}
+        onClose={() => setIsStatsPanelOpen(false)}
       />
     </div>
   );
@@ -257,14 +257,14 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 export default Home;
 
 export const getStaticProps: GetStaticProps = async () => {
-    const dataDirectory = path.join(process.cwd(), 'data');
-    const languagesFilePath = path.join(dataDirectory, 'languages.json');
-    const languagesJsonData = await fs.readFile(languagesFilePath, 'utf8');
-    const allLanguages: Language[] = JSON.parse(languagesJsonData);
-  
-    return {
-      props: {
-        allLanguages,
-      },
-    };
+  const dataDirectory = path.join(process.cwd(), 'data');
+  const languagesFilePath = path.join(dataDirectory, 'languages.json');
+  const languagesJsonData = await fs.readFile(languagesFilePath, 'utf8');
+  const allLanguages: Language[] = JSON.parse(languagesJsonData);
+
+  return {
+    props: {
+      allLanguages,
+    },
   };
+};
