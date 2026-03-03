@@ -12,6 +12,7 @@ import AboutPanel from '../components/layout/AboutPanel';
 import StatsPanel from '../components/layout/StatsPanel';
 import ToggleSidebarButton from '../components/ui/ToggleSidebarButton';
 import ThemeSwitch from '../components/ui/ThemeSwitch';
+import LanguageSwitch from '../components/ui/LanguageSwitch';
 import AboutButton from '../components/ui/AboutButton';
 import StatsButton from '../components/ui/StatsButton';
 import LoadingScreen from '../components/ui/LoadingScreen';
@@ -238,6 +239,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
       <NewsTicker newsItems={newsItems} />
       <ThemeSwitch />
+      <LanguageSwitch />
 
       <RightDetailPanel
         word={detailPanelWord}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Word } from '../../types/types';
 import SubmissionModal from '../ui/SubmissionModal';
+import { useLanguage } from '../../context/LanguageContext';
+import { t } from '../../utils/translations';
 // IMPORT SERVICE
 import { getWordMeaning, getAiEtymology } from '../../lib/api';
 
@@ -41,6 +43,8 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
+  const { language } = useLanguage();
 
   // --- AI ETYMOLOGY STATE ---
   const [aiDetails, setAiDetails] = useState<string | null>(null);
@@ -175,7 +179,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
       {/* Header */}
       <div style={headerStyle} onClick={toggleMinimize} title={isMinimized ? "Expand Panel" : "Minimize Panel"}>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Detay Paneli</h2>
+          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>{t('Detay Paneli', language)}</h2>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ transform: isMinimized ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', fontSize: '1.2rem', opacity: 0.8 }}>▼</div>
@@ -199,27 +203,36 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                 </button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <span className="shiny-effect" style={getBadgeStyle('language', word.originLanguage)} title="Köken Dili" onClick={() => handleBadgeClick('language', word.originLanguage)}>
-                  {getFlagUrl(word.originLanguage) && <img src={getFlagUrl(word.originLanguage)!} alt={word.originLanguage} style={{ width: '20px', height: '15px', borderRadius: '2px', objectFit: 'cover' }} />}
-                  {word.originLanguage}
+                {/* Fallback support for old originLanguage vs new ultimateOriginLanguage */}
+                <span className="shiny-effect" style={getBadgeStyle('language', (word as any).ultimateOriginLanguage || word.originLanguage)} title={t('Köken Dil', language)} onClick={() => handleBadgeClick('language', (word as any).ultimateOriginLanguage || word.originLanguage)}>
+                  {getFlagUrl((word as any).ultimateOriginLanguage || word.originLanguage) && <img src={getFlagUrl((word as any).ultimateOriginLanguage || word.originLanguage)!} alt={(word as any).ultimateOriginLanguage || word.originLanguage} style={{ width: '20px', height: '15px', borderRadius: '2px', objectFit: 'cover' }} />}
+                  {t((word as any).ultimateOriginLanguage || word.originLanguage, language)}
                 </span>
-                <span className="shiny-effect" style={getBadgeStyle('period', word.period)} title="Girdiği Dönem" onClick={() => handleBadgeClick('period', word.period)}>
-                  {word.period}
+
+                {/* Show immediate source if available */}
+                {(word as any).immediateSourceLanguage && (
+                  <span className="shiny-effect" style={getBadgeStyle('language', (word as any).immediateSourceLanguage)} title={t('Alındığı Dil', language)}>
+                    {t((word as any).immediateSourceLanguage, language)}
+                  </span>
+                )}
+
+                <span className="shiny-effect" style={getBadgeStyle('period', word.period)} title={t("Girdiği Dönem", language)} onClick={() => handleBadgeClick('period', word.period)}>
+                  {t(word.period, language)}
                 </span>
-                {word.date && <span style={{ ...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default' }} title="İlk Tespit Tarihi">{word.date}</span>}
+                {word.date && <span style={{ ...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default' }} title={t("İlk Tespit Tarihi", language)}>{word.date}</span>}
               </div>
             </div>
 
             <hr style={{ border: 'none', borderBottom: '1px solid var(--sidebar-border-color)', margin: 0 }} />
 
             <div>
-              <div style={labelStyle}>TDK ANLAMI</div>
-              <p style={textStyle}>{(isLoading || !liveData) ? (<span style={{ opacity: 0.6, fontStyle: 'italic' }}>Yükleniyor...</span>) : liveData.meaning}</p>
+              <div style={labelStyle}>{t('TDK ANLAMI', language)}</div>
+              <p style={textStyle}>{(isLoading || !liveData) ? (<span style={{ opacity: 0.6, fontStyle: 'italic' }}>{t('Yükleniyor...', language)}</span>) : liveData.meaning}</p>
             </div>
 
             {/* AI SECTION */}
             <div>
-              <div style={labelStyle}>ETİMOLOJİK ANALİZ</div>
+              <div style={labelStyle}>{t('ETİMOLOJİK ANALİZ', language)}</div>
 
               {!aiDetails && !isAiLoading && (
                 <button
@@ -235,14 +248,14 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   }}
                 >
                   <div className="ai-ready-dot"></div>
-                  Detaylı Köken Analizi
+                  {t('Detaylı Köken Analizi', language)}
                 </button>
               )}
 
               {isAiLoading && (
                 <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', fontStyle: 'italic', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem' }}>
                   <div className="loading-spinner" style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span>Analiz ediliyor...</span>
+                  <span>{t('Analiz ediliyor...', language)}</span>
                   <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 </div>
               )}
@@ -255,22 +268,22 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
             </div>
 
             <div>
-              <div style={labelStyle}>ÖRNEK CÜMLE</div>
+              <div style={labelStyle}>{t('ÖRNEK CÜMLE', language)}</div>
               <blockquote style={{ margin: 0, paddingLeft: '12px', borderLeft: '3px solid var(--detailspanel-header-bg)', fontStyle: 'italic', opacity: 0.9, background: 'rgba(128,128,128,0.05)', padding: '10px', borderRadius: '0 8px 8px 0' }}>
-                {(isLoading) ? 'Yükleniyor...' : (liveData?.example ? `"${liveData.example}"` : "Örnek cümle bulunamadı.")}
+                {(isLoading) ? t('Yükleniyor...', language) : (liveData?.example ? `"${liveData.example}"` : t("Örnek cümle bulunamadı.", language))}
               </blockquote>
             </div>
 
             <div>
-              <span style={labelStyle}>KAYNAK</span>
+              <span style={labelStyle}>{t('KAYNAK', language)}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--sidebar-item-hover-bg)', padding: '10px', borderRadius: '10px', border: '1px solid var(--sidebar-border-color)' }}>
-                <div style={{ flex: 1, fontSize: '0.95rem', fontWeight: 500 }}>{word.source || "Bilinmeyen Kaynak"}</div>
-                <a href={`https://sozluk.gov.tr/?ara=${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={primaryButtonStyle} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>Kaynağa Git ↗</a>
+                <div style={{ flex: 1, fontSize: '0.95rem', fontWeight: 500 }}>{word.source || t("Bilinmeyen Kaynak", language)}</div>
+                <a href={`https://sozluk.gov.tr/?ara=${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={primaryButtonStyle} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>{t('Kaynağa Git ↗', language)}</a>
               </div>
             </div>
 
             <div>
-              <span style={labelStyle}>DİJİTAL REFERANSLAR</span>
+              <span style={labelStyle}>{t('DİJİTAL REFERANSLAR', language)}</span>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <a href={`https://www.etimolojiturkce.com/kelime/${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={getRefButtonStyle('etimoloji')} onMouseEnter={() => setHoveredBtn('etimoloji')} onMouseLeave={() => setHoveredBtn(null)}>🏛️ Etimoloji TR</a>
                 <a href={`https://www.google.com/search?q=${encodeURI(word.word)}+kelime+kökeni`} target="_blank" rel="noreferrer" style={getRefButtonStyle('google')} onMouseEnter={() => setHoveredBtn('google')} onMouseLeave={() => setHoveredBtn(null)}>🔍 Google</a>
@@ -280,10 +293,10 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
 
           <div style={footerStyle}>
             <button onClick={handleOpenSuggestion} style={{ ...footerActionBtnStyle, background: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--detailspanel-header-bg)', color: 'var(--detailspanel-header-bg)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--sidebar-main-bg)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--sidebar-item-hover-bg)'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Öneri
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> {t('Öneri', language)}
             </button>
             <button onClick={handleOpenReport} disabled={isReported} style={{ ...footerActionBtnStyle, background: isReported ? 'transparent' : 'rgba(220, 53, 69, 0.1)', color: isReported ? 'green' : '#dc3545', border: isReported ? '1px solid green' : '1px solid #dc3545', cursor: isReported ? 'default' : 'pointer' }}>
-              {isReported ? (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Bildirildi</>) : (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Hata Bildir</>)}
+              {isReported ? (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{t('Bildirildi', language)}</>) : (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>{t('Hata Bildir', language)}</>)}
             </button>
           </div>
           <SubmissionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} type={modalType} wordName={word.word} wordId={word.id} onSuccess={handleSuccess} />
