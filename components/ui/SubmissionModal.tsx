@@ -2,20 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { albertSans } from '../../styles/fonts';
 import { submitFeedback } from '../../lib/api';
-import { useLanguage } from '../../context/LanguageContext';
-import { t } from '../../utils/translations';
+import { trackEvent } from '../../lib/analytics';
 
 interface SubmissionModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'report' | 'suggestion';
   wordName: string;
-  wordId: number;
+  wordId: number | string;
   onSuccess: () => void;
 }
 
 const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type, wordName, wordId, onSuccess }) => {
-  const { language } = useLanguage();
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,32 +36,30 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
 
   if (!isOpen || !mounted) return null;
 
-  // Configuration
   const isReport = type === 'report';
-  const title = isReport ? t('Hata / Yanlış Bilgi Bildir', language) : t('Düzenleme / İçerik Öner', language);
+  const title = isReport ? 'Hata / Yanlış Bilgi Bildir' : 'Düzenleme / İçerik Öner';
   const themeColor = isReport ? '#ef4444' : '#3b82f6';
 
   const options = isReport
     ? [
-      { val: 'wrong_origin', label: t('Yanlış Köken Bilgisi', language) },
-      { val: 'wrong_language', label: t('Yanlış Dil Etiketi', language) },
-      { val: 'typo', label: t('Yazım Hatası', language) },
-      { val: 'wrong_meaning', label: t('Hatalı Anlam/TDK', language) },
-      { val: 'bug', label: t('Site Hatası / Bug', language) },
-      { val: 'other', label: t('Diğer', language) }
+      { val: 'wrong_origin', label: 'Yanlış Köken Bilgisi' },
+      { val: 'wrong_language', label: 'Yanlış Dil Etiketi' },
+      { val: 'typo', label: 'Yazım Hatası' },
+      { val: 'wrong_meaning', label: 'Hatalı Anlam/TDK' },
+      { val: 'bug', label: 'Site Hatası / Bug' },
+      { val: 'other', label: 'Diğer' }
     ]
     : [
-      { val: 'better_meaning', label: t('Daha İyi Bir Açıklama', language) },
-      { val: 'add_source', label: t('Kaynak Ekleme', language) },
-      { val: 'add_example', label: t('Örnek Cümle Önerisi', language) },
-      { val: 'etymology_detail', label: t('Etimolojik Detay', language) },
-      { val: 'other', label: t('Diğer', language) }
+      { val: 'better_meaning', label: 'Daha İyi Bir Açıklama' },
+      { val: 'add_source', label: 'Kaynak Ekleme' },
+      { val: 'etymology_detail', label: 'Etimolojik Detay' },
+      { val: 'other', label: 'Diğer' }
     ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!category) {
-      setErrorMsg(t('Lütfen bir kategori seçiniz.', language));
+      setErrorMsg('Lütfen bir kategori seçiniz.');
       return;
     }
 
@@ -80,10 +76,12 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
         userAgent: navigator.userAgent
       });
 
+      trackEvent('user_submission', { type, category, wordName });
+
       onSuccess();
       onClose();
     } catch (err) {
-      setErrorMsg(t('Bir hata oluştu. Lütfen tekrar deneyin.', language));
+      setErrorMsg('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +122,6 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
     outline: 'none',
   };
 
-  // Portal Content
   const modalContent = (
     <div style={overlayStyle} onClick={onClose} className={albertSans.className}>
       <style>{`
@@ -148,27 +145,27 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
         </h2>
 
         <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '20px', textAlign: 'center' }}>
-          <strong>{wordName}</strong> {t('kelimesi için bildirimde bulunuyorsunuz.', language)}
+          <strong>{wordName}</strong> kelimesi için bildirimde bulunuyorsunuz.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: 600 }}>{t('Konu Başlığı', language)}</label>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: 600 }}>Konu Başlığı</label>
           <select
             style={inputStyle}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             required
           >
-            <option value="" disabled>{t('Seçiniz...', language)}</option>
+            <option value="" disabled>Seçiniz...</option>
             {options.map(opt => (
               <option key={opt.val} value={opt.val}>{opt.label}</option>
             ))}
           </select>
 
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: 600 }}>{t('Açıklama / Detay', language)}</label>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: 600 }}>Açıklama / Detay</label>
           <textarea
             style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
-            placeholder={isReport ? t('Hatayı kısaca açıklayınız...', language) : t('Önerinizi detaylandırınız...', language)}
+            placeholder={isReport ? 'Hatayı kısaca açıklayınız...' : 'Önerinizi detaylandırınız...'}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -176,7 +173,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
           {errorMsg && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '10px', textAlign: 'center' }}>{errorMsg}</p>}
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--sidebar-text-secondary)', cursor: 'pointer' }}>{t('İptal', language)}</button>
+            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--sidebar-text-secondary)', cursor: 'pointer' }}>İptal</button>
             <button
               type="submit"
               disabled={isSubmitting}
@@ -186,7 +183,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
                 opacity: isSubmitting ? 0.7 : 1
               }}
             >
-              {isSubmitting ? t('Gönderiliyor...', language) : t('Gönder', language)}
+              {isSubmitting ? 'Gönderiliyor...' : 'Gönder'}
             </button>
           </div>
         </form>

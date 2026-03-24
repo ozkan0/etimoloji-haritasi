@@ -1,9 +1,6 @@
 import React, { useMemo } from 'react';
 import { APP_CONFIG } from '../../../lib/constants';
 
-import { useLanguage } from '../../../context/LanguageContext';
-import { t } from '../../../utils/translations';
-
 interface TimeSliderProps {
   year: number;
   onChange: (year: number) => void;
@@ -16,10 +13,7 @@ const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isR
   const minYear = APP_CONFIG.MIN_YEAR;
   const maxYear = APP_CONFIG.MAX_YEAR;
 
-  const { language } = useLanguage();
-
-  // Force disabled state for maintenance mode
-  const isMaintenanceDisabled = true;
+  const isMaintenanceDisabled = false;
 
   const getPercentage = () => {
     return ((year - minYear) / (maxYear - minYear)) * 100;
@@ -76,13 +70,13 @@ const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isR
   return (
     <div style={containerStyle}>
 
-      {/* Maintenance overlay message */}
       <div style={{
         position: 'absolute', top: '-15px', color: '#ffb74d', fontSize: '0.85rem', fontWeight: 600,
         backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 12px', borderRadius: '12px', zIndex: 10,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3)', pointerEvents: 'none'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)', pointerEvents: 'none',
+        display: isMaintenanceDisabled ? 'block' : 'none'
       }}>
-        {t('Zaman Çizelgesi Yapım Aşamasında (Yüzyıl sistemine geçiliyor)', language)}
+        Zaman Çizelgesi Yapım Aşamasında (Yüzyıl sistemine geçiliyor)
       </div>
 
       {!isMaintenanceDisabled && !disabled && (
@@ -106,7 +100,6 @@ const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isR
             {year}
           </div>
 
-          {/* Kırmızı Çizgi */}
           <div style={{
             position: 'absolute',
             left: `${getPercentage()}%`,

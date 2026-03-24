@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.53.0",
+    "dotenv": "^17.3.1",
     "leaflet": "^1.9.4",
     "next": "15.5.9",
     "ogl": "^1.0.11",
@@ -19,7 +21,8 @@
     "react-dom": "19.1.0",
     "react-leaflet": "^5.0.0",
     "react-virtualized-auto-sizer": "^2.0.2",
-    "react-window": "^2.2.4"
+    "react-window": "^2.2.4",
+    "tdk-all-api": "^1.0.0"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.20",

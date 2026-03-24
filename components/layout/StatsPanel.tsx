@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import VerticalBarChart from '../features/graphs/VerticalBarChart';
-import { useLanguage } from '../../context/LanguageContext';
-import { t } from '../../utils/translations';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface StatsPanelProps {
   isOpen: boolean;
@@ -10,10 +9,11 @@ interface StatsPanelProps {
 }
 
 const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
-  const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [langStats, setLangStats] = useState<{ label: string, value: number }[]>([]);
-  const [periodStats, setPeriodStats] = useState<{ label: string, value: number }[]>([]);
+  const [immediateLangStats, setImmediateLangStats] = useState<{ label: string, value: number }[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<'origin' | 'immediate'>('origin');
 
   useEffect(() => {
     if (isOpen && langStats.length === 0) {
@@ -24,8 +24,10 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
   const fetchStats = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('words')
-      .select('*');
+      .from('cached_stats')
+      .select('*')
+      .eq('id', 1)
+      .single();
 
     if (error) {
       console.error('Stats fetch error:', error);
@@ -34,27 +36,19 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
     }
 
     if (data) {
-      const lCounts: Record<string, number> = {};
-      const pCounts: Record<string, number> = {};
-
-      data.forEach((row: any) => {
-        const lang = row.ultimateOriginLanguage || row.originLanguage || t('Bilinmiyor', language);
-        lCounts[lang] = (lCounts[lang] || 0) + 1;
-
-        const period = row.period || t('Bilinmiyor', language);
-        pCounts[period] = (pCounts[period] || 0) + 1;
-      });
-
-      const sortedLangs = Object.entries(lCounts)
-        .map(([label, value]) => ({ label: t(label, language), value }))
-        .sort((a, b) => b.value - a.value);
-
-      const sortedPeriods = Object.entries(pCounts)
-        .map(([label, value]) => ({ label: t(label, language), value }))
-        .sort((a, b) => b.value - a.value);
-
-      setLangStats(sortedLangs);
-      setPeriodStats(sortedPeriods);
+      setLangStats(data.lang_stats || []);
+      setImmediateLangStats(data.immediate_lang_stats || []);
+      
+      if (data.updated_at) {
+          const dateObj = new Date(data.updated_at);
+          setLastUpdated(dateObj.toLocaleString('tr-TR', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }));
+      }
     }
     setLoading(false);
   };
@@ -76,7 +70,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
     width: 'calc(100vw - 780px)',
     minWidth: '600px',
     maxWidth: '1200px',
-    height: '320px',
+    height: '340px',
 
     transform: isOpen ? 'translate(-50%, 0)' : 'translate(-50%, 120%)',
     opacity: isOpen ? 1 : 0,
@@ -84,21 +78,31 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
 
     backgroundColor: 'var(--sidebar-main-bg)',
     border: '1px solid var(--sidebar-border-color)',
-    borderRadius: '24px',
+    borderRadius: '12px',
     boxShadow: '0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)',
 
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
     zIndex: 1101,
-    padding: '30px 40px',
+    padding: '16px 24px 20px 24px',
+  };
+
+  const headerStyle: React.CSSProperties = {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '10px',
+      paddingBottom: '8px',
+      borderBottom: '1px solid var(--sidebar-border-color)',
   };
 
   const contentContainer: React.CSSProperties = {
     display: 'flex',
+    flexDirection: 'column',
     width: '100%',
     height: '100%',
-    gap: '30px',
+    gap: '8px',
   };
 
   const graphSection: React.CSSProperties = {
@@ -108,33 +112,88 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
     flexDirection: 'column',
   };
 
+  const buttonStyle = (isActive: boolean): React.CSSProperties => ({
+    padding: '6px 12px',
+    borderRadius: '6px',
+    backgroundColor: isActive ? 'var(--input-bg)' : 'transparent',
+    border: `1px solid ${isActive ? 'var(--sidebar-border-color)' : 'transparent'}`,
+    color: isActive ? 'var(--sidebar-text-primary)' : 'var(--sidebar-text-secondary)',
+    fontSize: '0.75rem',
+    fontWeight: isActive ? 600 : 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  });
+
+  const activeData = displayMode === 'origin' ? langStats : immediateLangStats;
+  const activeTitle = displayMode === 'origin' ? "Köken Dili Dağılımı" : "Geçiş Dili Dağılımı";
+  const activeColor = displayMode === 'origin' ? "#3b82f6" : "#10b981"; // Blue for Origin, Emerald for Immediate
+
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={panelStyle} onClick={(e) => e.stopPropagation()}>
+        
+        {/* Header section with Update Date */}
+        <div style={headerStyle}>
+            {/* Empty div to push the right-side flex items to the right using space-between */}
+            <div />
+            
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '0.75rem',
+                color: 'var(--sidebar-text-secondary)',
+                fontWeight: 500,
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: '1px solid rgba(255,255,255,0.05)',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
+            }}>
+                {lastUpdated ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: '#10b981',
+                            boxShadow: '0 0 8px #10b981'
+                        }} />
+                        Son Analiz: {lastUpdated}
+                    </div>
+                ) : (
+                    <span>Yükleniyor...</span>
+                )}
+            </div>
+        </div>
 
         {loading ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sidebar-text-secondary)' }}>
-            {t('Veriler Analiz Ediliyor...', language)}
+            Veriler Analiz Ediliyor...
           </div>
         ) : (
           <div style={contentContainer}>
-
+            
             <div style={graphSection}>
               <VerticalBarChart
-                title={t("Köken Dili Dağılımı", language)}
-                data={langStats}
-                color="#3b82f6"
+                title={activeTitle}
+                data={activeData}
+                color={activeColor}
               />
             </div>
 
-            <div style={{ width: '1px', backgroundColor: 'var(--sidebar-border-color)', height: '80%', alignSelf: 'center' }} />
-
-            <div style={graphSection}>
-              <VerticalBarChart
-                title={t("Dönem Dağılımı", language)}
-                data={periodStats}
-                color="#f59e0b"
-              />
+            <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid var(--sidebar-border-color)' }}>
+              <button 
+                style={buttonStyle(displayMode === 'origin')}
+                onClick={() => setDisplayMode('origin')}
+              >
+                Köken Dil
+              </button>
+              <button 
+                style={buttonStyle(displayMode === 'immediate')}
+                onClick={() => setDisplayMode('immediate')}
+              >
+                Geçiş Dili
+              </button>
             </div>
 
           </div>
