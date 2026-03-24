@@ -19,7 +19,7 @@ const VerticalBarChart: React.FC<VerticalBarChartProps> = ({ title, data, color 
       <h3 style={titleStyle}>{title}</h3>
       
       {/* Scrollable Chart Area */}
-      <div className="hide-scrollbar" style={chartAreaStyle}>
+      <div className="styled-scrollbar" style={chartAreaStyle}>
         {data.map((item, index) => (
           <div key={item.label} style={columnContainerStyle}>
             
@@ -54,13 +54,24 @@ const VerticalBarChart: React.FC<VerticalBarChartProps> = ({ title, data, color 
         @keyframes growUp {
           to { transform: scaleY(1); }
         }
-        /* Scrollbar Gizleme */
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+        /* Elegant Scrollbar */
+        .styled-scrollbar {
+          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+          scrollbar-width: thin;
         }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
+        .styled-scrollbar::-webkit-scrollbar {
+          height: 8px;
+        }
+        .styled-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 4px;
+        }
+        .styled-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 4px;
+        }
+        .styled-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.25);
         }
       `}</style>
     </div>
@@ -77,8 +88,8 @@ const containerStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  margin: '0 0 15px 0',
-  fontSize: '0.85rem',
+  margin: '0 0 8px 0',
+  fontSize: '0.75rem',
   fontWeight: 700,
   color: 'var(--sidebar-text-secondary)',
   textTransform: 'uppercase',
@@ -93,8 +104,7 @@ const chartAreaStyle: React.CSSProperties = {
   overflowX: 'auto', 
   overflowY: 'hidden',
   height: '100%',
-  paddingBottom: '5px',
-  maskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
+  paddingBottom: '12px', /* extra padding for scrollbar */
 };
 
 const columnContainerStyle: React.CSSProperties = {
@@ -103,7 +113,7 @@ const columnContainerStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'flex-end',
   height: '100%',
-  minWidth: '45px',
+  minWidth: '40px',
   flex: '0 0 auto',
 };
 
@@ -119,22 +129,22 @@ const barWrapperStyle: React.CSSProperties = {
 };
 
 const barFillStyle: React.CSSProperties = {
-  width: '20px',
-  borderRadius: '6px',
+  width: '16px',
+  borderRadius: '4px',
   minHeight: '4px',
   boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
 };
 
 const valueStyle: React.CSSProperties = {
-  fontSize: '0.7rem',
+  fontSize: '0.65rem',
   fontWeight: 700,
   color: 'var(--sidebar-text-primary)',
-  marginBottom: '2px',
+  marginBottom: '1px',
   opacity: 0.8
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: '0.65rem',
+  fontSize: '0.6rem',
   color: 'var(--sidebar-text-secondary)',
   textAlign: 'center',
   fontWeight: 500,
