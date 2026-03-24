@@ -17,7 +17,6 @@ export default async function handler(
   const normalizedWord = word.toLowerCase().trim();
 
   try {
-    // 1. Check cache first
     const { data: cached } = await supabase
       .from('word_cache')
       .select('ai_details')
@@ -47,7 +46,6 @@ export default async function handler(
     const response = await result.response;
     const text = response.text().trim();
 
-    // 2. Cache the result
     await supabase.from('word_cache').upsert({
       word: normalizedWord,
       ai_details: text,

@@ -4,6 +4,8 @@ import { wordService } from '../services/wordService';
 
 export const useEtymologyData = () => {
   const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
+  const [mapWords, setMapWords] = useState<Word[]>([]);
+  const [dailyWord, setDailyWord] = useState<Word | null>(null);
   const [newsItems, setNewsItems] = useState<{ id: number, text: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -12,8 +14,14 @@ export const useEtymologyData = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const words = await wordService.fetchSidebarWords(2000);
-        setSidebarWords(words);
+        const sidebar = await wordService.fetchSidebarWords(20);
+        setSidebarWords(sidebar);
+
+        const mapW = await wordService.fetchSidebarWords(1500);
+        setMapWords(mapW);
+
+        const daily = await wordService.fetchDailyWord();
+        setDailyWord(daily);
 
         const news = await wordService.fetchNewsItems();
         setNewsItems(news);
@@ -29,5 +37,5 @@ export const useEtymologyData = () => {
     fetchData();
   }, []);
 
-  return { sidebarWords, newsItems, isLoading, error };
+  return { sidebarWords, mapWords, dailyWord, newsItems, isLoading, error };
 };

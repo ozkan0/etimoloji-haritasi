@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Word } from '../../types/types';
 import SubmissionModal from '../ui/SubmissionModal';
-import { useLanguage } from '../../context/LanguageContext';
-import { t } from '../../utils/translations';
-// IMPORT SERVICE
-import { getWordMeaning, getAiEtymology } from '../../lib/api';
+import { trackEvent } from '../../lib/analytics';
+import { getWordMeaning, getAiEtymology, TdkMeaning } from '../../lib/api';
 
 interface LiveTdkData {
-  meaning: string;
+  meanings: TdkMeaning[];
   example?: string | null;
 }
 
@@ -44,8 +42,6 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
-  const { language } = useLanguage();
-
   // --- AI ETYMOLOGY STATE ---
   const [aiDetails, setAiDetails] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -62,18 +58,18 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     if (word) {
       setIsVisible(true);
       setIsMinimized(false);
+      trackEvent('word_view', { word: word.word, id: word.id, lang: word.originLanguage });
       setIsLoading(true);
       setLiveData(null);
       setIsReported(false);
       setAiDetails(null);
       setIsAiLoading(false);
 
-      // --- UPDATED API CALL ---
       getWordMeaning(word.word)
         .then((data) => {
           if (isMounted) {
             setLiveData({
-              meaning: data.meaning,
+              meanings: data.meanings || [],
               example: data.example
             });
           }
@@ -81,7 +77,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
         .catch((err) => {
           if (isMounted) {
             console.error(err);
-            setLiveData({ meaning: 'Bağlantı hatası.', example: null });
+            setLiveData({ meanings: [{ text: 'Bağlantı hatası.' }], example: null });
           }
         })
         .finally(() => {
@@ -91,7 +87,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
 
     return () => {
       isMounted = false;
-      controller.abort(); // Note: Our api service wrapper doesn't expose abort signal yet, but this is fine for now
+      controller.abort();
       window.speechSynthesis.cancel();
     };
   }, [word]);
@@ -109,13 +105,13 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
-  // --- UPDATED AI FETCH HANDLER ---
   const handleFetchAiDetails = async () => {
     if (!word) return;
     setIsAiLoading(true);
     try {
       const data = await getAiEtymology(word.word);
       setAiDetails(data.details || "Analiz yapılamadı.");
+      trackEvent('ai_details_view', { word: word.word, id: word.id });
     } catch (error) {
       setAiDetails("Bağlantı hatası.");
     } finally {
@@ -146,14 +142,14 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const panelStyle: React.CSSProperties = { position: 'absolute', top: '40px', right: '0', bottom: '0', height: 'auto', width: '380px', backgroundColor: 'var(--sidebar-main-bg)', borderLeft: '1px solid var(--sidebar-border-color)', borderTop: '1px solid var(--sidebar-border-color)', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', zIndex: 1002, transform: transformValue, transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)', display: 'flex', flexDirection: 'column', color: 'var(--sidebar-text-primary)', fontFamily: 'inherit', borderTopLeftRadius: '22px', borderTopRightRadius: '22px', overflow: 'hidden' };
   const headerStyle: React.CSSProperties = { padding: '14px 22px', backgroundColor: 'var(--detailspanel-header-bg)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderTopLeftRadius: '22px', cursor: 'pointer', height: '56px', transition: 'background-color 0.2s' };
   const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
-  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: 'var(--sidebar-item-hover-bg)', flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '20px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
+  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: 'var(--sidebar-item-hover-bg)', flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
 
   const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-secondary)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
   const getBadgeStyle = (type: 'language' | 'period', value: string): React.CSSProperties => { const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value); return { ...badgeStyle, backgroundColor: isActive ? 'var(--detailspanel-header-bg)' : 'var(--sidebar-item-hover-bg)', border: isActive ? '1px solid transparent' : '1px solid var(--sidebar-border-color)', color: isActive ? 'white' : 'var(--sidebar-text-secondary)', boxShadow: isActive ? 'inset 0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)', }; };
   const labelStyle: React.CSSProperties = { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--sidebar-text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'block' };
   const textStyle: React.CSSProperties = { fontSize: '1rem', lineHeight: '1.6', margin: 0 };
   const primaryButtonStyle: React.CSSProperties = { textDecoration: 'none', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '6px', border: 'none', color: 'white', backgroundColor: 'var(--detailspanel-header-bg)', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', flex: '0 0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' };
-  const getRefButtonStyle = (btnId: string): React.CSSProperties => ({ textDecoration: 'none', fontSize: '0.9rem', padding: '12px 14px', borderRadius: '10px', backgroundColor: hoveredBtn === btnId ? 'var(--sidebar-item-hover-bg)' : 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', fontWeight: 500, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flex: 1, transform: hoveredBtn === btnId ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hoveredBtn === btnId ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)' });
+  const getRefButtonStyle = (btnId: string): React.CSSProperties => ({ textDecoration: 'none', fontSize: '0.9rem', padding: '12px 14px', borderRadius: '10px', backgroundColor: hoveredBtn === btnId ? 'var(--sidebar-item-hover-bg)' : 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', fontWeight: 500, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', flex: 1, transform: hoveredBtn === btnId ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hoveredBtn === btnId ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)' });
   const footerActionBtnStyle: React.CSSProperties = { flex: 1, padding: '8px 4px', height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' };
 
   const aiButtonStyle: React.CSSProperties = {
@@ -176,10 +172,9 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
 
   return (
     <div style={panelStyle} className="right-panel-modern">
-      {/* Header */}
       <div style={headerStyle} onClick={toggleMinimize} title={isMinimized ? "Expand Panel" : "Minimize Panel"}>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>{t('Detay Paneli', language)}</h2>
+          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Detay Paneli</h2>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ transform: isMinimized ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', fontSize: '1.2rem', opacity: 0.8 }}>▼</div>
@@ -189,7 +184,6 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
       {word && (
         <>
           <div className="right-panel-content" style={contentStyle}>
-            {/* Title */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '16px' }}>
                 <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-1px' }}>{word.word}</h1>
@@ -203,62 +197,172 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                 </button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {/* Fallback support for old originLanguage vs new ultimateOriginLanguage */}
-                <span className="shiny-effect" style={getBadgeStyle('language', (word as any).ultimateOriginLanguage || word.originLanguage)} title={t('Köken Dil', language)} onClick={() => handleBadgeClick('language', (word as any).ultimateOriginLanguage || word.originLanguage)}>
+                <span className="shiny-effect" style={getBadgeStyle('language', (word as any).ultimateOriginLanguage || word.originLanguage)} title="Köken Dil" onClick={() => handleBadgeClick('language', (word as any).ultimateOriginLanguage || word.originLanguage)}>
                   {getFlagUrl((word as any).ultimateOriginLanguage || word.originLanguage) && <img src={getFlagUrl((word as any).ultimateOriginLanguage || word.originLanguage)!} alt={(word as any).ultimateOriginLanguage || word.originLanguage} style={{ width: '20px', height: '15px', borderRadius: '2px', objectFit: 'cover' }} />}
-                  {t((word as any).ultimateOriginLanguage || word.originLanguage, language)}
+                  {(word as any).ultimateOriginLanguage || word.originLanguage}
                 </span>
 
-                {/* Show immediate source if available */}
-                {(word as any).immediateSourceLanguage && (
-                  <span className="shiny-effect" style={getBadgeStyle('language', (word as any).immediateSourceLanguage)} title={t('Alındığı Dil', language)}>
-                    {t((word as any).immediateSourceLanguage, language)}
-                  </span>
-                )}
 
-                <span className="shiny-effect" style={getBadgeStyle('period', word.period)} title={t("Girdiği Dönem", language)} onClick={() => handleBadgeClick('period', word.period)}>
-                  {t(word.period, language)}
+
+                <span className="shiny-effect" style={getBadgeStyle('period', word.period)} title="Girdiği Dönem" onClick={() => handleBadgeClick('period', word.period)}>
+                  {word.period}
                 </span>
-                {word.date && <span style={{ ...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default' }} title={t("İlk Tespit Tarihi", language)}>{word.date}</span>}
+                {word.date && <span style={{ ...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default' }} title="İlk Tespit Tarihi">{word.date}</span>}
               </div>
             </div>
 
             <hr style={{ border: 'none', borderBottom: '1px solid var(--sidebar-border-color)', margin: 0 }} />
 
             <div>
-              <div style={labelStyle}>{t('TDK ANLAMI', language)}</div>
-              <p style={textStyle}>{(isLoading || !liveData) ? (<span style={{ opacity: 0.6, fontStyle: 'italic' }}>{t('Yükleniyor...', language)}</span>) : liveData.meaning}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ ...labelStyle, marginBottom: 0 }}>TDK ANLAMI</div>
+                <a
+                  href={`https://sozluk.gov.tr/?kelime=${encodeURIComponent(word.word)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'var(--sidebar-text-secondary)', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.8, transition: 'all 0.2s', fontWeight: 600 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.textDecoration = 'underline'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.textDecoration = 'none'; }}
+                  title="TDK'da Sorgula"
+                >
+                  <span>sayfaya git</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7" /></svg>
+                </a>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {(isLoading || !liveData) ? (
+                  <p style={textStyle}><span style={{ opacity: 0.6, fontStyle: 'italic' }}>Yükleniyor...</span></p>
+                ) : (
+                  liveData.meanings?.map((m, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                      {liveData.meanings.length > 1 && <span style={{ fontWeight: 700, opacity: 0.8, color: 'var(--detailspanel-header-bg)', minWidth: '18px' }}>{idx + 1}.</span>}
+                      <p style={{ ...textStyle, flex: 1, margin: 0 }}>
+                        {m.type && <span style={{ fontStyle: 'italic', opacity: 0.7, marginRight: '6px' }}>[{m.type}]</span>}
+                        {m.text}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            {/* AI SECTION */}
+
+            <hr style={{ border: 'none', borderBottom: '1px solid var(--sidebar-border-color)', margin: 0 }} />
+
             <div>
-              <div style={labelStyle}>{t('ETİMOLOJİK ANALİZ', language)}</div>
+              <div style={labelStyle}>ETİMOLOJİK VERİLER</div>
 
-              {!aiDetails && !isAiLoading && (
-                <button
-                  onClick={handleFetchAiDetails}
-                  style={aiButtonStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 6px 15px rgba(2, 132, 199, 0.35)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.25)';
-                  }}
-                >
-                  <div className="ai-ready-dot"></div>
-                  {t('Detaylı Köken Analizi', language)}
-                </button>
-              )}
-
-              {isAiLoading && (
-                <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', fontStyle: 'italic', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem' }}>
-                  <div className="loading-spinner" style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span>{t('Analiz ediliyor...', language)}</span>
-                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <div style={{ backgroundColor: 'var(--sidebar-item-hover-bg)', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Köken Dil:</span>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(0, 255, 242, 0.85)' }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
                 </div>
-              )}
+                {((word as any).immediateSourceLanguage && (word as any).immediateSourceLanguage !== 'Unknown' && (word as any).immediateSourceLanguage !== ((word as any).ultimateOriginLanguage || word.originLanguage)) && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Geçiş Dili:</span>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>{(word as any).immediateSourceLanguage}</span>
+                    </div>
+                  </>
+                )}
+
+                {(word.isControversial !== undefined && word.isControversial !== null && word.isControversial !== '') && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Tartışmalı:</span>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: String(word.isControversial).toLowerCase() === 'true' ? '#f59e0b' : 'inherit' }}>
+                        {String(word.isControversial).toLowerCase() === 'true' ? 'Evet' : 'Hayır'}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {word.originSourceType && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Köken Türü:</span>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>{word.originSourceType}</span>
+                    </div>
+                  </>
+                )}
+
+                {word.formula && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Formül:</span>
+                      <span style={{ fontSize: '0.9rem', fontFamily: 'monospace', color: 'rgba(255, 255, 255, 0.9)', backgroundColor: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {word.formula}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {word.etymology_text && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '1rem', color: 'rgba(0, 255, 242, 0.85)', lineHeight: '1.5', fontWeight: 700, opacity: 0.85 }}>{word.etymology_text}</span>
+                    </div>
+                  </>
+                )}
+
+                {word.extraInfo && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Ek Bilgi:</span>
+                      <span style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.85)', lineHeight: '1.5' }}>{word.extraInfo}</span>
+                    </div>
+                  </>
+                )}
+
+                {word.source && (
+                  <>
+                    <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>En Eski Kaynak:</span>
+                      <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)', fontStyle: 'italic', lineHeight: '1.4' }}>{word.source}</span>
+                    </div>
+                  </>
+                )}
+
+                {!aiDetails && !isAiLoading && (
+                  <button
+                    onClick={handleFetchAiDetails}
+                    style={{
+                      ...aiButtonStyle,
+                      padding: '8px 16px',
+                      fontSize: '0.85rem',
+                      marginTop: '8px',
+                      width: 'fit-content',
+                      alignSelf: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 6px 15px rgba(2, 132, 199, 0.35)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.25)';
+                    }}
+                  >
+                    <div className="ai-ready-dot" style={{ width: '6px', height: '6px' }}></div>
+                    Detaylı Köken Analizi
+                  </button>
+                )}
+
+                {isAiLoading && (
+                  <div style={{ padding: '8px 16px', borderRadius: '8px', backgroundColor: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.2)', fontStyle: 'italic', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginTop: '8px', width: 'fit-content', alignSelf: 'center' }}>
+                    <div className="loading-spinner" style={{ width: '12px', height: '12px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span>Analiz ediliyor...</span>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  </div>
+                )}
+              </div>
 
               {aiDetails && (
                 <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: 'rgba(14, 165, 233, 0.05)', border: '1px solid rgba(14, 165, 233, 0.2)', lineHeight: '1.5', fontSize: '0.9rem', color: 'var(--sidebar-text-primary)' }}>
@@ -267,36 +371,38 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
               )}
             </div>
 
-            <div>
-              <div style={labelStyle}>{t('ÖRNEK CÜMLE', language)}</div>
-              <blockquote style={{ margin: 0, paddingLeft: '12px', borderLeft: '3px solid var(--detailspanel-header-bg)', fontStyle: 'italic', opacity: 0.9, background: 'rgba(128,128,128,0.05)', padding: '10px', borderRadius: '0 8px 8px 0' }}>
-                {(isLoading) ? t('Yükleniyor...', language) : (liveData?.example ? `"${liveData.example}"` : t("Örnek cümle bulunamadı.", language))}
-              </blockquote>
-            </div>
+
+
 
             <div>
-              <span style={labelStyle}>{t('KAYNAK', language)}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--sidebar-item-hover-bg)', padding: '10px', borderRadius: '10px', border: '1px solid var(--sidebar-border-color)' }}>
-                <div style={{ flex: 1, fontSize: '0.95rem', fontWeight: 500 }}>{word.source || t("Bilinmeyen Kaynak", language)}</div>
-                <a href={`https://sozluk.gov.tr/?ara=${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={primaryButtonStyle} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>{t('Kaynağa Git ↗', language)}</a>
-              </div>
-            </div>
-
-            <div>
-              <span style={labelStyle}>{t('DİJİTAL REFERANSLAR', language)}</span>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <a href={`https://www.etimolojiturkce.com/kelime/${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={getRefButtonStyle('etimoloji')} onMouseEnter={() => setHoveredBtn('etimoloji')} onMouseLeave={() => setHoveredBtn(null)}>🏛️ Etimoloji TR</a>
-                <a href={`https://www.google.com/search?q=${encodeURI(word.word)}+kelime+kökeni`} target="_blank" rel="noreferrer" style={getRefButtonStyle('google')} onMouseEnter={() => setHoveredBtn('google')} onMouseLeave={() => setHoveredBtn(null)}>🔍 Google</a>
+              <span style={labelStyle}>DİJİTAL REFERANSLAR</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <a href={`https://www.etimolojiturkce.com/kelime/${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={getRefButtonStyle('etimoloji')} onMouseEnter={() => setHoveredBtn('etimoloji')} onMouseLeave={() => setHoveredBtn(null)}>
+                  <img src="https://www.etimolojiturkce.com/favicon.ico" alt="etimolojiturkce" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                  etimolojiturkce.com
+                </a>
+                <a href={`https://en.wiktionary.org/wiki/${encodeURI(word.word)}#Turkish`} target="_blank" rel="noreferrer" style={getRefButtonStyle('wiktionary')} onMouseEnter={() => setHoveredBtn('wiktionary')} onMouseLeave={() => setHoveredBtn(null)}>
+                  <img src="https://en.wiktionary.org/favicon.ico" alt="wiktionary" style={{ width: '18px', height: '18px', borderRadius: '2px' }} />
+                  en.wiktionary.org
+                </a>
+                <a href={`https://www.nisanyansozluk.com/kelime/${encodeURI(word.word)}`} target="_blank" rel="noreferrer" style={getRefButtonStyle('nisanyan')} onMouseEnter={() => setHoveredBtn('nisanyan')} onMouseLeave={() => setHoveredBtn(null)}>
+                  <img src="https://www.nisanyansozluk.com/favicon.ico" alt="nisanyan" style={{ width: '18px', height: '18px', borderRadius: '4px' }} />
+                  nisanyansozluk.com
+                </a>
+                <a href={`https://www.google.com/search?q=${encodeURI(word.word)}+kelime+kökeni`} target="_blank" rel="noreferrer" style={getRefButtonStyle('google')} onMouseEnter={() => setHoveredBtn('google')} onMouseLeave={() => setHoveredBtn(null)}>
+                  <img src="https://www.google.com/favicon.ico" alt="google" style={{ width: '18px', height: '18px' }} />
+                  google.com
+                </a>
               </div>
             </div>
           </div>
 
           <div style={footerStyle}>
             <button onClick={handleOpenSuggestion} style={{ ...footerActionBtnStyle, background: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--detailspanel-header-bg)', color: 'var(--detailspanel-header-bg)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--sidebar-main-bg)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--sidebar-item-hover-bg)'}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> {t('Öneri', language)}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Öneri
             </button>
             <button onClick={handleOpenReport} disabled={isReported} style={{ ...footerActionBtnStyle, background: isReported ? 'transparent' : 'rgba(220, 53, 69, 0.1)', color: isReported ? 'green' : '#dc3545', border: isReported ? '1px solid green' : '1px solid #dc3545', cursor: isReported ? 'default' : 'pointer' }}>
-              {isReported ? (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{t('Bildirildi', language)}</>) : (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>{t('Hata Bildir', language)}</>)}
+              {isReported ? (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Bildirildi</>) : (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Hata Bildir</>)}
             </button>
           </div>
           <SubmissionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} type={modalType} wordName={word.word} wordId={word.id} onSuccess={handleSuccess} />

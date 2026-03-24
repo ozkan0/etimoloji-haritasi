@@ -15,7 +15,6 @@ export default async function handler(
   const normalizedWord = word.toLowerCase().trim();
 
   try {
-    // 1. Check cache first
     const { data: cached } = await supabase
       .from('word_cache')
       .select('tdk_meaning, tdk_example')
@@ -23,7 +22,18 @@ export default async function handler(
       .single();
 
     if (cached && cached.tdk_meaning) {
-      return res.status(200).json({ meaning: cached.tdk_meaning, example: cached.tdk_example });
+      let meanings = [];
+      try {
+        const parsed = JSON.parse(cached.tdk_meaning);
+        if (Array.isArray(parsed)) {
+          meanings = parsed;
+        } else {
+          meanings = [{ text: cached.tdk_meaning }];
+        }
+      } catch (e) {
+        meanings = [{ text: cached.tdk_meaning }];
+      }
+      return res.status(200).json({ meanings, example: cached.tdk_example });
     }
 
     const agent = new https.Agent({
@@ -54,41 +64,46 @@ export default async function handler(
     if (Array.isArray(data) && data.length > 0) {
       const firstEntry = data[0];
 
-      let meaning = 'Anlam bulunamadı.';
+      let meanings: any[] = [];
       let example = null;
 
       if (firstEntry.anlamlarListe && firstEntry.anlamlarListe.length > 0) {
-        meaning = firstEntry.anlamlarListe[0].anlam;
-
         for (const anlam of firstEntry.anlamlarListe) {
-          if (anlam.orneklerListe && Array.isArray(anlam.orneklerListe) && anlam.orneklerListe.length > 0) {
-            const candidate = anlam.orneklerListe[0].ornek;
+          let typeStr = '';
+          if (anlam.ozelliklerListe && anlam.ozelliklerListe.length > 0) {
+            typeStr = anlam.ozelliklerListe.map((oz: any) => oz.tam_adi).join(', ');
+          }
+          meanings.push({ type: typeStr, text: anlam.anlam });
 
+          if (!example && anlam.orneklerListe && Array.isArray(anlam.orneklerListe) && anlam.orneklerListe.length > 0) {
+            const candidate = anlam.orneklerListe[0].ornek;
             if (candidate && candidate.trim() !== '') {
               example = candidate;
-              break;
             }
           }
         }
       }
 
-      // 2. Cache the result for future users
-      if (meaning !== 'Anlam bulunamadı.') {
+      if (meanings.length === 0) {
+        meanings.push({ text: 'Anlam bulunamadı.' });
+      }
+
+      if (meanings[0].text !== 'Anlam bulunamadı.') {
         await supabase.from('word_cache').upsert({
           word: normalizedWord,
-          tdk_meaning: meaning,
+          tdk_meaning: JSON.stringify(meanings),
           tdk_example: example,
           updated_at: new Date().toISOString()
         });
       }
 
-      return res.status(200).json({ meaning, example });
+      return res.status(200).json({ meanings, example });
     }
 
-    return res.status(404).json({ meaning: 'TDK sözlüğünde kayıt bulunamadı.', example: null });
+    return res.status(404).json({ meanings: [{ text: 'TDK sözlüğünde kayıt bulunamadı.' }], example: null });
 
   } catch (error) {
     console.error('TDK API Proxy Hatası:', error);
-    return res.status(500).json({ meaning: 'Bağlantı hatası.', example: null });
+    return res.status(500).json({ meanings: [{ text: 'Bağlantı hatası.' }], example: null });
   }
 }
