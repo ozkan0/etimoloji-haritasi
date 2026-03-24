@@ -1,12 +1,15 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Word } from '../../types/types';
+import { trackEvent } from '../../lib/analytics';
 import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES } from '../../lib/constants';
+import { wordService } from '../../services/wordService';
 
 interface LeftSidebarProps {
   allWords: Word[];
+  dailyWord?: Word | null;
   onWordSelect: (word: Word) => void;
   isVisible: boolean;
-  onFilterChange: (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string, limitPerLanguage: number) => void;
+  onFilterChange: (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, limitPerLanguage: number, languageMode: 'origin' | 'immediate') => void;
   externalFilterTrigger?: { type: 'language' | 'period', value: string, timestamp: number } | null;
 }
 
@@ -80,91 +83,166 @@ const CustomDropdown: React.FC<DropdownProps> = ({ options, value, onChange }) =
   );
 };
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVisible, onFilterChange, externalFilterTrigger }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSelect, isVisible, onFilterChange, externalFilterTrigger }) => {
 
   // --- STATE ---
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Word[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const [activeLanguageFilter, setActiveLanguageFilter] = useState('Tüm Diller');
   const [activePeriodFilter, setActivePeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
-
-  const [applyToMap, setApplyToMap] = useState(false);
+  const [languageMode, setLanguageMode] = useState<'origin' | 'immediate'>('origin');
 
   const [limitPerLanguage, setLimitPerLanguage] = useState(5);
 
-  const [wordOfTheDay, setWordOfTheDay] = useState<Word | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const RESULTS_PER_PAGE = 20;
 
-  // --- INITIALIZATION ---
   useEffect(() => {
-    if (allWords.length > 0) {
-      const today = new Date();
-      const seed = today.getDate() + (today.getMonth() + 1) * 100 + today.getFullYear() * 10000;
-      const index = seed % allWords.length;
-      setWordOfTheDay(allWords[index]);
-    }
-  }, [allWords]);
+    setCurrentPage(1);
+  }, [searchQuery, activeLanguageFilter, activePeriodFilter, languageMode]);
 
   // --- EXTERNAL TRIGGER ---
   useEffect(() => {
     if (externalFilterTrigger) {
       if (externalFilterTrigger.type === 'language') {
-        setActiveLanguageFilter(externalFilterTrigger.value);
+        setActiveLanguageFilter(prev => prev === externalFilterTrigger.value ? 'Tüm Diller' : externalFilterTrigger.value);
       } else if (externalFilterTrigger.type === 'period') {
-        setActivePeriodFilter(externalFilterTrigger.value as any);
+        setActivePeriodFilter(prev => prev === externalFilterTrigger.value ? 'Tüm Dönemler' : externalFilterTrigger.value as any);
       }
-      setApplyToMap(true);
     }
   }, [externalFilterTrigger]);
 
-  // --- FILTER LOGIC (LIST) ---
-  const filteredWordsForList = useMemo(() => {
-    return allWords
-      .filter(word => {
-        const matchesSearch = word.word.toLocaleLowerCase('tr-TR').includes(activeSearchTerm.toLocaleLowerCase('tr-TR'));
-        const matchesLanguage = activeLanguageFilter === 'Tüm Diller' || word.originLanguage === activeLanguageFilter;
-        const matchesPeriod = activePeriodFilter === 'Tüm Dönemler' || word.period === activePeriodFilter;
-        return matchesSearch && matchesLanguage && matchesPeriod;
-      })
-      .sort((a, b) => a.word.localeCompare(b.word, 'tr'));
-  }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
+  // --- MANUAL DB SEARCH ---
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-  // --- FILTER LOGIC (MAP) ---
-  const filteredWordsForMap = useMemo(() => {
-    return allWords
-      .filter(word => {
-        const matchesSearch = word.word.toLocaleLowerCase('tr-TR').includes(activeSearchTerm.toLocaleLowerCase('tr-TR'));
-        const matchesLanguage = activeLanguageFilter === 'Tüm Diller' || word.originLanguage === activeLanguageFilter;
-        const matchesPeriod = activePeriodFilter === 'Tüm Dönemler' || word.period === activePeriodFilter;
-        return matchesSearch && matchesLanguage && matchesPeriod;
-      });
-  }, [allWords, activeSearchTerm, activeLanguageFilter, activePeriodFilter]);
+    let isMounted = true;
+    const executeSearch = async () => {
+      setIsSearching(true);
+      try {
+        const results = await wordService.searchWords(searchQuery);
+        if (isMounted) {
+          setSearchResults(results);
+          setIsFilteredListActive(false);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        if (isMounted) setIsSearching(false);
+      }
+    };
+
+    executeSearch();
+
+    return () => { isMounted = false; };
+  }, [searchQuery]);
+
+  // --- FILTER LOGIC (LIST) ---
+  const [isFilteredListActive, setIsFilteredListActive] = useState(false);
+
+  const filteredWordsForList = useMemo(() => {
+    const dataSource = (searchQuery.trim() || isFilteredListActive) ? searchResults : allWords;
+    return [...dataSource].sort((a, b) => a.word.localeCompare(b.word, 'tr'));
+  }, [allWords, searchResults, searchQuery, isFilteredListActive]);
+
+  // --- PAGINATION LOGIC ---
+  const totalPages = Math.ceil(filteredWordsForList.length / RESULTS_PER_PAGE) || 1;
+  const paginatedWords = useMemo(() => {
+    const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+    return filteredWordsForList.slice(startIndex, startIndex + RESULTS_PER_PAGE);
+  }, [filteredWordsForList, currentPage]);
+
 
   // --- UPDATE PARENT ---
   useEffect(() => {
-    onFilterChange(filteredWordsForMap, applyToMap, activeLanguageFilter, activePeriodFilter, limitPerLanguage);
-  }, [filteredWordsForMap, applyToMap, activeLanguageFilter, activePeriodFilter, limitPerLanguage]);
+    onFilterChange(activeSearchTerm, true, activeLanguageFilter, activePeriodFilter, limitPerLanguage, languageMode);
+  }, [activeSearchTerm, activeLanguageFilter, activePeriodFilter, limitPerLanguage, languageMode]);
+
+  // --- ANALYTICS TRACKING ---
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      trackEvent('search', { query: searchQuery });
+    }
+  }, [searchQuery]);
 
   // --- LANGUAGES ---
+  const [completeLangs, setCompleteLangs] = useState<{ origins: string[], immediates: string[] } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/languages')
+      .then(res => res.json())
+      .then(data => {
+        if (data.origins && data.immediates) {
+           setCompleteLangs(data);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   const availableLanguages = useMemo(() => {
+    if (completeLangs) {
+       return ['Tüm Diller', ...(languageMode === 'immediate' ? completeLangs.immediates : completeLangs.origins)];
+    }
+
     const coreLanguages = [
       'Türkçe', 'Arapça', 'Fransızca', 'Farsça', 'İtalyanca',
       'Almanca', 'İspanyolca', 'İngilizce', 'Latince', 'Yunanca'
     ];
-    const dynamicLangs = allWords.map(w => w.originLanguage);
+    let dynamicLangs: string[];
+    
+    if (languageMode === 'immediate') {
+      dynamicLangs = allWords
+        .map(w => (w as any).immediateSourceLanguage || (w as any).immediateLanguage || 'Bilinmiyor')
+        .filter(lang => lang && lang !== 'Bilinmiyor');
+    } else {
+      dynamicLangs = allWords.map(w => (w as any).ultimateOriginLanguage || w.originLanguage);
+    }
+    
     const uniqueLangs = [...new Set([...coreLanguages, ...dynamicLangs])];
     uniqueLangs.sort((a, b) => a.localeCompare(b, 'tr'));
     return ['Tüm Diller', ...uniqueLangs];
-  }, [allWords]);
+  }, [allWords, languageMode, completeLangs]);
 
   // --- HANDLERS ---
   const handleSearchChange = (val: string) => { setActiveSearchTerm(val); };
-  const handleClearSearch = () => { setActiveSearchTerm(''); };
+  const handleExecuteSearch = () => { setSearchQuery(activeSearchTerm); };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleExecuteSearch();
+  };
+  const handleClearSearch = () => {
+    setActiveSearchTerm('');
+    setSearchQuery('');
+  };
 
   const handleResetFilters = () => {
     setActiveSearchTerm('');
+    setSearchQuery('');
     setActiveLanguageFilter('Tüm Diller');
     setActivePeriodFilter('Tüm Dönemler');
-    setApplyToMap(false);
+    setIsFilteredListActive(false);
+  };
+
+  const [isFetchingList, setIsFetchingList] = useState(false);
+  const handleFetchList = async () => {
+    setIsFetchingList(true);
+    setActiveSearchTerm('');
+    setSearchQuery('');
+    
+    try {
+      const results = await wordService.fetchFilteredWords(activeLanguageFilter, activePeriodFilter, languageMode, 300);
+      setSearchResults(results);
+      setIsFilteredListActive(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsFetchingList(false);
+    }
   };
 
   // --- STYLES ---
@@ -180,6 +258,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
   const wordDetailStyle: React.CSSProperties = { color: 'var(--sidebar-text-secondary)', marginTop: '4px', fontSize: '0.8rem', opacity: 0.8 };
   const footerStyle: React.CSSProperties = { position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: 'var(--sidebar-header-bg)', color: 'white', padding: '15px 20px', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 10, boxShadow: '0 -4px 15px rgba(0,0,0,0.15)', cursor: 'pointer', borderBottomLeftRadius: '22px', borderBottomRightRadius: '22px' };
   const resetButtonStyle: React.CSSProperties = { padding: '8px 16px', backgroundColor: 'rgba(255, 99, 71, 0.15)', border: '1px solid rgba(255, 99, 71, 0.4)', color: '#ffcccc', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap', fontFamily: 'inherit' };
+  const paginationButtonStyle: React.CSSProperties = { padding: '6px 12px', backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'white', borderRadius: '6px', fontSize: '0.8rem', transition: 'all 0.2s', fontFamily: 'inherit' };
   const sliderLabelStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
   const rangeInputStyle: React.CSSProperties = { width: '100%', cursor: 'pointer', accentColor: 'var(--detailspanel-header-bg)' };
 
@@ -224,68 +303,142 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, onWordSelect, isVis
         </div>
 
         <div style={searchContainerStyle}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input className="modern-input" type="text" placeholder="Kelime ara..." value={activeSearchTerm} onChange={(e) => handleSearchChange(e.target.value)} style={searchInputStyle} />
+          <svg onClick={handleExecuteSearch} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, cursor: 'pointer' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input
+            className="modern-input"
+            type="text"
+            placeholder="Kelime Ara..."
+            value={activeSearchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={searchInputStyle}
+          />
           {activeSearchTerm && <button onClick={handleClearSearch} style={clearButtonStyle}>×</button>}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
-          <CustomDropdown options={availableLanguages} value={activeLanguageFilter} onChange={setActiveLanguageFilter} />
+        {/* Embedded Filters Content */}
+        <div style={{ 
+          display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '14px',
+          borderRadius: '10px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: 'inset 0 4px 10px rgba(255,255,255,0.06)'
+        }}>
+            <CustomDropdown options={availableLanguages} value={activeLanguageFilter} onChange={setActiveLanguageFilter} />
 
-          <div style={segmentContainerStyle}>
-            <div style={getSegmentStyle('Osmanlı Öncesi', activePeriodFilter === 'Osmanlı Öncesi')} onClick={() => setActivePeriodFilter(PERIOD_NAMES.OSMANLI_ONCESI as any)}>Osmanlı Öncesi</div>
-            <div style={getSegmentStyle('Osmanlı', activePeriodFilter === 'Osmanlı')} onClick={() => setActivePeriodFilter(PERIOD_NAMES.OSMANLI as any)}>Osmanlı</div>
-            <div style={getSegmentStyle('Cumhuriyet', activePeriodFilter === 'Cumhuriyet')} onClick={() => setActivePeriodFilter(PERIOD_NAMES.CUMHURIYET as any)}>Cumhuriyet</div>
-          </div>
-
-          <div style={{ marginTop: '15px', padding: '0 4px' }}>
-            <div style={sliderLabelStyle}>
-              <span>Haritada Dil Başına Kelime</span>
-              <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>{limitPerLanguage}</span>
-            </div>
-            <input type="range" min="5" max="30" step="1" value={limitPerLanguage} onChange={(e) => setLimitPerLanguage(parseInt(e.target.value))} style={rangeInputStyle} />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingBottom: '5px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <div style={{
-                width: '20px', height: '20px', borderRadius: '6px', border: '2px solid rgba(255,255,255,0.5)',
-                backgroundColor: applyToMap ? 'white' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
-              }}>
-                {applyToMap && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sidebar-header-bg)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+            <div style={{ display: 'flex', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '4px', gap: '4px' }}>
+              <div 
+                style={getSegmentStyle('Köken Dil', languageMode === 'origin')} 
+                onClick={() => { setLanguageMode('origin'); setActiveLanguageFilter('Tüm Diller'); }}
+              >
+                Köken Dil
               </div>
-              <input type="checkbox" checked={applyToMap} onChange={(e) => setApplyToMap(e.target.checked)} style={{ display: 'none' }} />
-              <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: 500, userSelect: 'none' }}>Haritayı Filtrele</span>
-            </label>
-            <button style={resetButtonStyle} onClick={handleResetFilters} title="Filtreleri sıfırla">Sıfırla</button>
+              <div 
+                style={getSegmentStyle('Geçiş Dili', languageMode === 'immediate')} 
+                onClick={() => { setLanguageMode('immediate'); setActiveLanguageFilter('Tüm Diller'); }}
+              >
+                Geçiş Dili
+              </div>
+            </div>
+
+            <div style={segmentContainerStyle}>
+              <div style={getSegmentStyle('Osmanlı Öncesi', activePeriodFilter === 'Osmanlı Öncesi')} onClick={() => setActivePeriodFilter(prev => prev === 'Osmanlı Öncesi' ? 'Tüm Dönemler' : 'Osmanlı Öncesi')}>Osmanlı Öncesi</div>
+              <div style={getSegmentStyle('Osmanlı', activePeriodFilter === 'Osmanlı')} onClick={() => setActivePeriodFilter(prev => prev === 'Osmanlı' ? 'Tüm Dönemler' : 'Osmanlı')}>Osmanlı</div>
+              <div style={getSegmentStyle('Cumhuriyet', activePeriodFilter === 'Cumhuriyet')} onClick={() => setActivePeriodFilter(prev => prev === 'Cumhuriyet' ? 'Tüm Dönemler' : 'Cumhuriyet')}>Cumhuriyet</div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '5px', gap: '8px' }}>
+              <button 
+                onClick={handleFetchList} 
+                disabled={isFetchingList}
+                title="Seçili filtreleri listeye getir"
+                style={{ 
+                  flex: 1,
+                  padding: '8px 16px', 
+                  backgroundColor: 'rgba(2, 132, 199, 0.25)', 
+                  border: '1px solid rgba(2, 132, 199, 0.5)', 
+                  color: 'white', 
+                  borderRadius: '8px', 
+                  cursor: isFetchingList ? 'wait' : 'pointer', 
+                  fontSize: '0.85rem', 
+                  fontWeight: 600, 
+                  transition: 'all 0.2s', 
+                  fontFamily: 'inherit',
+                  opacity: isFetchingList ? 0.7 : 1
+                }}>
+                {isFetchingList ? 'Yükleniyor...' : 'Listeye Getir'}
+              </button>
+              <button style={resetButtonStyle} onClick={handleResetFilters} title="Filtreleri sıfırla">Sıfırla</button>
+            </div>
+        </div>
+
+        {/* Marker Limits - Always Visible */}
+        <div style={{ marginTop: '5px', padding: '0 4px' }}>
+          <div style={sliderLabelStyle}>
+            <span>Haritada Dil Başına Kelime</span>
+            <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>{limitPerLanguage}</span>
           </div>
+          <input type="range" min="5" max="25" step="1" value={limitPerLanguage} onChange={(e) => setLimitPerLanguage(parseInt(e.target.value))} style={rangeInputStyle} />
         </div>
       </div>
 
       <ul style={wordListStyle}>
-        {filteredWordsForList.map(word => (
-          <li key={word.id} onClick={() => onWordSelect(word)} style={wordItemStyle} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--sidebar-item-hover-bg)'; e.currentTarget.style.borderLeft = '4px solid var(--sidebar-header-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderLeft = '4px solid transparent'; }}>
+        {!isSearching && (
+          <div style={{ padding: '0 10px 10px 10px', fontSize: '0.8rem', color: 'var(--sidebar-text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+            <span>{filteredWordsForList.length} kelime bulundu</span>
+            {filteredWordsForList.length > 0 && <span>Sayfa {currentPage} / {totalPages}</span>}
+          </div>
+        )}
+        
+        {isSearching && (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--sidebar-text-secondary)', opacity: 0.7, fontStyle: 'italic' }}>Aranıyor...</div>
+        )}
+        
+        {!isSearching && paginatedWords.map(word => (
+          <li key={`${word.id}-${word.word}`} onClick={() => onWordSelect(word)} style={wordItemStyle} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--sidebar-item-hover-bg)'; e.currentTarget.style.borderLeft = '4px solid var(--sidebar-header-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderLeft = '4px solid transparent'; }}>
             <div style={{ fontWeight: 700, fontSize: '1rem' }}>{word.word}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-              <small style={wordDetailStyle}>{word.originLanguage}</small>
+              <small style={wordDetailStyle}>{(word as any).ultimateOriginLanguage || word.originLanguage}</small>
               <small style={wordDetailStyle}>{word.period}</small>
             </div>
           </li>
         ))}
-        {filteredWordsForList.length === 0 && (
+        
+        {!isSearching && filteredWordsForList.length === 0 && (
           <div style={{ padding: '20px', textAlign: 'center', color: 'var(--sidebar-text-secondary)', opacity: 0.7 }}>Sonuç bulunamadı.</div>
+        )}
+
+        {/* Pagination Controls */}
+        {!isSearching && totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '15px', paddingBottom: '15px' }}>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              style={{ ...paginationButtonStyle, opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'default' : 'pointer' }}
+            >
+              Önceki
+            </button>
+            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', color: 'white' }}>{currentPage}</span>
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              style={{ ...paginationButtonStyle, opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'default' : 'pointer' }}
+            >
+              Sonraki
+            </button>
+          </div>
         )}
       </ul>
 
-      {wordOfTheDay && (
-        <div className="word-of-the-day-card" onClick={() => onWordSelect(wordOfTheDay)}>
+      {dailyWord && (
+        <div className="word-of-the-day-card" onClick={() => onWordSelect(dailyWord)}>
           <div className="word-of-the-day-badge">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             GÜNÜN KELİMESİ
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-            <div className="word-of-the-day-title">{wordOfTheDay.word}</div>
-            <div className="word-of-the-day-lang">{wordOfTheDay.originLanguage}</div>
+            <div className="word-of-the-day-title">{dailyWord.word}</div>
+            <div className="word-of-the-day-lang">{(dailyWord as any).ultimateOriginLanguage || dailyWord.originLanguage}</div>
           </div>
         </div>
       )}

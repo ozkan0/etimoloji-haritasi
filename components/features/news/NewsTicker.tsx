@@ -42,7 +42,6 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
           justify-content: center;
           overflow: hidden;
 
-          /* Block Selection */
           user-select: none;
           -webkit-user-select: none;
           -moz-user-select: none;
@@ -51,7 +50,6 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
           pointer-events: auto; 
           cursor: default;
           
-          /* Enforce Font Inheritance */
           font-family: inherit;
         }
 
@@ -85,7 +83,6 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems }) => {
           width: 100%;
           text-align: center;
           
-          /* Inherit Lora from wrapper */
           font-family: inherit;
         }
 

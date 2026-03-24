@@ -1,5 +1,5 @@
 import type { GetStaticProps, NextPage } from 'next';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import path from 'path';
 import { promises as fs } from 'fs';
 import dynamic from 'next/dynamic';
@@ -26,6 +26,43 @@ import { Word, Language, WordOnMap } from '../types/types';
 import { getRandomCoordinatesInBoundingBox } from '../utils/geoUtils';
 import { useEtymologyData } from '../hooks/useEtymologyData';
 
+const mapOriginLanguageToTurkish = (lang: string): string => {
+  const codeMap: Record<string, string> = {
+    // Turkic / Central Asian
+    'Eski Türkçe': 'Eski Türkçe',
+    'Karahanlıca': 'Eski Türkçe',
+    'Uygurca': 'Eski Türkçe',
+    'Yakutça': 'Eski Türkçe',
+    'Çuvaşça': 'Eski Türkçe',
+
+    'Orta Türkçe': 'Orta Türkçe',
+    'Çağatayca': 'Orta Türkçe',
+    'Kıpçakça': 'Orta Türkçe',
+    'Harezmce': 'Orta Türkçe',
+    'Kazakça': 'Orta Türkçe',
+    'Özbekçe': 'Orta Türkçe',
+    'Türkmence': 'Orta Türkçe',
+    'Kırgızca': 'Orta Türkçe',
+    'Tatarca': 'Orta Türkçe',
+
+    'Türkiye Türkçesi': 'Türkçe',
+    'Yeni Türkçe': 'Türkçe',
+    'Azerice': 'Türkçe',
+    'Gagauzca': 'Türkçe',
+
+    // Meso & Levant
+    'Akatça': 'Süryanice',
+    'Sümerce': 'Süryanice',
+    'Aramice': 'Süryanice',
+
+    // Indo-European overrides
+    'Yeni Latince': 'Latince',
+    'Orta Latince': 'Latince',
+    'Geç Latince': 'Latince'
+  };
+  return codeMap[lang.trim()] || lang.trim();
+};
+
 const MapComponent = dynamic(() => import('../components/map/Map'), {
   ssr: false,
   loading: () => null,
@@ -39,7 +76,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const router = useRouter();
 
   // --- DATA FETCHING ---
-  const { sidebarWords, newsItems, isLoading } = useEtymologyData();
+  const { sidebarWords, mapWords, dailyWord, newsItems, isLoading } = useEtymologyData();
 
   // --- UI STATES ---
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -56,20 +93,36 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
 
   const [selectedYear, setSelectedYear] = useState(2025);
-  const [currentFilteredList, setCurrentFilteredList] = useState<Word[]>([]);
-  const [isMapFilterActive, setIsMapFilterActive] = useState(false);
+  const [currentSearchTerm, setCurrentSearchTerm] = useState('');
 
   const [currentActiveLang, setCurrentActiveLang] = useState('Tüm Diller');
   const [currentActivePeriod, setCurrentActivePeriod] = useState('Tüm Dönemler');
+  const [currentLanguageMode, setCurrentLanguageMode] = useState<'origin' | 'immediate'>('origin');
   const [limitPerLang, setLimitPerLang] = useState(5);
 
   // --- MAP GENERATION LOGIC ---
+  const coordinateCache = useRef<Record<string, [number, number]>>({});
+
+  const getPersistentCoordinates = useCallback((wordKey: string, languageData: Language): [number, number] => {
+    if (coordinateCache.current[wordKey]) {
+      return coordinateCache.current[wordKey];
+    }
+
+    const newCoords = getRandomCoordinatesInBoundingBox(languageData);
+    coordinateCache.current[wordKey] = newCoords;
+    return newCoords;
+  }, []);
+
   const generateMapWords = useCallback((wordsToMap: Word[], limit: number) => {
     if (!allLanguages || allLanguages.length === 0) return [];
 
     const groupedWords: Record<string, Word[]> = {};
     wordsToMap.forEach(word => {
-      const langKey = word.originLanguage.trim();
+      const rawLang = currentLanguageMode === 'immediate'
+        ? ((word as any).immediateSourceLanguage || (word as any).immediateLanguage || 'Bilinmiyor')
+        : ((word as any).ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
+        
+      const langKey = String(rawLang).trim();
       if (!groupedWords[langKey]) groupedWords[langKey] = [];
       groupedWords[langKey].push(word);
     });
@@ -77,77 +130,91 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     let selectedWords: Word[] = [];
     Object.keys(groupedWords).forEach(lang => {
       const wordsInLang = groupedWords[lang];
-      const shuffled = [...wordsInLang].sort(() => 0.5 - Math.random());
-      const picked = shuffled.slice(0, limit);
+      const picked = wordsInLang.slice(0, limit);
       selectedWords = [...selectedWords, ...picked];
     });
 
     return selectedWords.map((word: Word) => {
+      const rawLang = currentLanguageMode === 'immediate'
+        ? ((word as any).immediateSourceLanguage || (word as any).immediateLanguage || 'Bilinmiyor')
+        : ((word as any).ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
+        
+      const dbLang = mapOriginLanguageToTurkish(String(rawLang));
       const languageData = allLanguages.find((lang: Language) =>
-        lang.language.toLocaleLowerCase('tr-TR') === word.originLanguage.trim().toLocaleLowerCase('tr-TR')
+        lang.language.toLocaleLowerCase('tr-TR') === dbLang.toLocaleLowerCase('tr-TR')
       );
       if (!languageData) return null;
       return {
         ...word,
-        coordinates: getRandomCoordinatesInBoundingBox(languageData),
+        coordinates: getPersistentCoordinates(`${word.id}-${word.word}`, languageData),
       };
     }).filter((word: WordOnMap | null): word is WordOnMap => word !== null);
-  }, [allLanguages]);
+  }, [allLanguages, getPersistentCoordinates, currentLanguageMode]);
 
   // --- INITIAL MAP POPULATION ---
   useEffect(() => {
-    if (!isLoading && sidebarWords.length > 0) {
-      setCurrentFilteredList(sidebarWords);
-
-      // Generate default map
-      const initialSet = generateMapWords(sidebarWords, 5);
+    if (!isLoading && mapWords.length > 0) {
+      const initialSet = generateMapWords(mapWords, 5);
       setWordsOnMap(initialSet);
       setDefaultMapWords(initialSet);
     }
-  }, [isLoading, sidebarWords, generateMapWords]);
+  }, [isLoading, mapWords, sidebarWords, generateMapWords]);
 
   // --- CENTRAL FILTERING (Map & Time) ---
   const mapSourceList = useMemo(() => {
-    return isMapFilterActive ? currentFilteredList : sidebarWords;
-  }, [isMapFilterActive, currentFilteredList, sidebarWords]);
+    return mapWords.filter(word => {
+      const matchesPeriod = currentActivePeriod === 'Tüm Dönemler' || word.period === currentActivePeriod;
+
+      let matchesLanguage = true;
+      if (currentActiveLang !== 'Tüm Diller') {
+        const langStr = currentLanguageMode === 'immediate'
+          ? ((word as any).immediateSourceLanguage || (word as any).immediateLanguage || 'Bilinmiyor')
+          : ((word as any).ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
+        matchesLanguage = langStr.trim() === currentActiveLang;
+      }
+      
+      return matchesPeriod && matchesLanguage;
+    });
+  }, [mapWords, currentActivePeriod, currentActiveLang, currentLanguageMode]);
 
   useEffect(() => {
-    if (mapSourceList.length === 0) return;
+    if (mapSourceList.length === 0) {
+      setWordsOnMap([]);
+      return;
+    }
 
     const timeFilteredList = mapSourceList.filter(word => {
-      if (isMapFilterActive) return true;
-
       if (!word.date) return true;
       const wDate = parseInt(String(word.date));
       if (isNaN(wDate)) return true;
       return wDate <= selectedYear;
     });
 
-    if (!isMapFilterActive && selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5) {
+    if (selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5 && mapSourceList.length === mapWords.length) {
       setWordsOnMap(defaultMapWords);
     } else {
       const newMapSet = generateMapWords(timeFilteredList, limitPerLang);
       setWordsOnMap(newMapSet);
     }
-  }, [selectedYear, mapSourceList, isMapFilterActive, defaultMapWords, generateMapWords, limitPerLang]);
+  }, [selectedYear, mapSourceList, defaultMapWords, generateMapWords, limitPerLang, mapWords.length]);
 
 
   // --- HANDLERS ---
 
-  const handleFilterChange = (filteredWords: Word[], applyToMap: boolean, activeLang: string, activePeriod: string, limit: number) => {
-    setCurrentFilteredList(filteredWords);
-    setIsMapFilterActive(applyToMap);
+  const handleFilterChange = (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, limit: number, languageMode: 'origin' | 'immediate') => {
+    setCurrentSearchTerm(searchTerm);
     setCurrentActiveLang(activeLang);
     setCurrentActivePeriod(activePeriod);
     setLimitPerLang(limit);
+    setCurrentLanguageMode(languageMode);
   };
 
   const handleWordSelect = useCallback((selectedWord: Word) => {
     if (!allLanguages) return;
+    const dbLang = mapOriginLanguageToTurkish(selectedWord.originLanguage);
     const languageData = allLanguages.find(lang =>
-      lang.language.toLocaleLowerCase('tr-TR') === selectedWord.originLanguage.trim().toLocaleLowerCase('tr-TR')
+      lang.language.toLocaleLowerCase('tr-TR') === dbLang.toLocaleLowerCase('tr-TR')
     );
-    if (!languageData || !languageData.boundingBox) return;
 
     setDetailPanelWord(selectedWord);
 
@@ -155,10 +222,12 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     if (existingWord) {
       setMapFlyToTarget(existingWord.coordinates);
     } else {
-      const newCoordinates = getRandomCoordinatesInBoundingBox(languageData);
-      const newWordOnMap: WordOnMap = { ...selectedWord, coordinates: newCoordinates };
-      setWordsOnMap(prev => [...prev, newWordOnMap]);
-      setMapFlyToTarget(newCoordinates);
+      if (languageData && languageData.boundingBox) {
+        const newCoordinates = getPersistentCoordinates(selectedWord.id.toString(), languageData);
+        const newWordOnMap: WordOnMap = { ...selectedWord, coordinates: newCoordinates };
+        setWordsOnMap(prev => [...prev, newWordOnMap]);
+        setMapFlyToTarget(newCoordinates);
+      }
     }
   }, [allLanguages, wordsOnMap]);
 
@@ -212,6 +281,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
       <LeftSidebar
         allWords={sidebarWords}
+        dailyWord={dailyWord}
         onWordSelect={handleWordSelect}
         isVisible={isSidebarVisible}
         onFilterChange={handleFilterChange}
@@ -224,7 +294,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
           mapFlyToTarget={mapFlyToTarget}
           onMarkerClick={handleMarkerClick}
           onMapClick={() => { }}
-          selectedWordId={detailPanelWord?.id || null}
+          selectedWordKey={detailPanelWord ? `${detailPanelWord.id}-${detailPanelWord.word}` : null}
         />
       </main>
 
@@ -233,7 +303,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         onChange={setSelectedYear}
         isLeftOpen={isSidebarVisible}
         isRightOpen={detailPanelWord !== null}
-        disabled={isMapFilterActive}
+        disabled={false}
       />
 
       <NewsTicker newsItems={newsItems} />

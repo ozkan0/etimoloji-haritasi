@@ -40,11 +40,11 @@ const FlyToMarker = ({ target }: { target: [number, number] | null }) => {
 
 const createWordIcon = (wordText: string, isSelected: boolean) => {
   const activeClass = isSelected ? 'active' : '';
-  
+
   return L.divIcon({
     className: 'word-marker-container',
     html: `<div class="modern-marker ${activeClass}">${wordText}</div>`,
-    iconSize: null as any, 
+    iconSize: null as any,
     iconAnchor: [0, 0],
   });
 };
@@ -53,7 +53,7 @@ const WordMarker = React.memo(({ word, isSelected, onClick }: { word: WordOnMap,
   const icon = useMemo(() => createWordIcon(word.word, isSelected), [word.word, isSelected]);
 
   return (
-    <Marker 
+    <Marker
       position={word.coordinates}
       icon={icon}
       zIndexOffset={isSelected ? 1000 : 0}
@@ -63,10 +63,10 @@ const WordMarker = React.memo(({ word, isSelected, onClick }: { word: WordOnMap,
     />
   );
 }, (prevProps, nextProps) => {
-  return prevProps.word.id === nextProps.word.id && 
-         prevProps.word.coordinates[0] === nextProps.word.coordinates[0] &&
-         prevProps.word.coordinates[1] === nextProps.word.coordinates[1] &&
-         prevProps.isSelected === nextProps.isSelected;
+  return prevProps.word.id === nextProps.word.id &&
+    prevProps.word.coordinates[0] === nextProps.word.coordinates[0] &&
+    prevProps.word.coordinates[1] === nextProps.word.coordinates[1] &&
+    prevProps.isSelected === nextProps.isSelected;
 });
 
 interface MapProps {
@@ -74,17 +74,17 @@ interface MapProps {
   mapFlyToTarget: [number, number] | null;
   onMarkerClick: (word: WordOnMap) => void;
   onMapClick: () => void;
-  selectedWordId: number | null;
+  selectedWordKey: string | null;
 }
 
-const Map: React.FC<MapProps> = ({ 
-  wordsOnMap, 
-  mapFlyToTarget, 
-  onMarkerClick, 
-  onMapClick, 
-  selectedWordId 
+const Map: React.FC<MapProps> = ({
+  wordsOnMap,
+  mapFlyToTarget,
+  onMarkerClick,
+  onMapClick,
+  selectedWordKey
 }) => {
-  const { theme } = useTheme(); 
+  const { theme } = useTheme();
   const mapBounds: LatLngBoundsExpression = [[-40, -80], [75, 170]];
   const lightMapUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
   const darkMapUrl = `https://{s}.tile.jawg.io/cff409a6-f8fe-4c7b-a746-46097db4ee20/{z}/{x}/{y}{r}.png?access-token=${process.env.NEXT_PUBLIC_JAWG_TOKEN}`;
@@ -101,13 +101,13 @@ const Map: React.FC<MapProps> = ({
       zoomControl={false}
     >
       <MapZoomHandler />
-      
+
       <TileLayer
         key={theme}
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url={theme === 'light' ? lightMapUrl : darkMapUrl}
       />
-      
+
       <MapClickHandler onClick={onMapClick} />
       <FlyToMarker target={mapFlyToTarget} />
 
@@ -115,18 +115,18 @@ const Map: React.FC<MapProps> = ({
         if (isNaN(word.coordinates[0]) || isNaN(word.coordinates[1])) return null;
 
         return (
-          <WordMarker 
-            key={word.id} 
-            word={word} 
-            isSelected={selectedWordId === word.id} 
+          <WordMarker
+            key={`${word.id}-${word.word}`}
+            word={word}
+            isSelected={selectedWordKey === `${word.id}-${word.word}`}
             onClick={(e) => {
-               L.DomEvent.stopPropagation(e);
-               onMarkerClick(word);
-            }} 
+              L.DomEvent.stopPropagation(e);
+              onMarkerClick(word);
+            }}
           />
         );
       })}
-      
+
       <ZoomControl position="topright" />
     </MapContainer>
   );

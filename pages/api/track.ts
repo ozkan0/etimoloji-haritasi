@@ -11,7 +11,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { type, category, description, wordId, wordName, userAgent } = req.body;
+  const { eventType, eventData, userAgent } = req.body;
+
+  if (!eventType) {
+    return res.status(400).json({ message: 'Missing eventType' });
+  }
 
   const forwarded = req.headers['x-forwarded-for'];
   const ip = typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.socket.remoteAddress || 'unknown';
@@ -21,25 +25,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const sessionId = crypto.createHash('sha256').update(`${ip}-${userAgent}-${today}-${secureSalt}`).digest('hex').substring(0, 16);
 
   try {
-    const { data, error } = await supabase
-      .from('submissions')
+    const { error } = await supabase
+      .from('analytics_events')
       .insert([
         {
-          type,
-          category,
-          description,
-          word_id: wordId,
-          word_name: wordName,
-          user_ip: ip,
+          event_type: eventType,
+          event_data: eventData || {},
+          session_id: sessionId,
           user_agent: userAgent,
         },
       ]);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Analytics Insert Error:', error);
+    }
 
     return res.status(200).json({ success: true });
   } catch (error: any) {
-    console.error('Feedback Error:', error);
+    console.error('Analytics Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }
