@@ -28,7 +28,19 @@ export const PERIOD_COLORS = {
 };
 
 export const PERIOD_NAMES = {
-  OSMANLI_ONCESI: 'Osmanlı Öncesi',
+  OSMANLI_ONCESI: 'O. Öncesi',
   OSMANLI: 'Osmanlı',
   CUMHURIYET: 'Cumhuriyet'
+};
+
+export const PERIOD_ALIASES: Record<string, string> = {
+  'Osmanlı Öncesi': PERIOD_NAMES.OSMANLI_ONCESI,
+  [PERIOD_NAMES.OSMANLI_ONCESI]: PERIOD_NAMES.OSMANLI_ONCESI,
+  [PERIOD_NAMES.OSMANLI]: PERIOD_NAMES.OSMANLI,
+  [PERIOD_NAMES.CUMHURIYET]: PERIOD_NAMES.CUMHURIYET,
+};
+
+export const normalizePeriodLabel = (value: string): string => {
+  const raw = String(value || '').trim();
+  return PERIOD_ALIASES[raw] || raw;
 };

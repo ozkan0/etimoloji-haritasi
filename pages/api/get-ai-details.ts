@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../../lib/supabaseClient';
+import { normalizeTurkish } from '../../utils/normalizeTurkish';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -14,7 +15,7 @@ export default async function handler(
     return res.status(400).json({ error: 'Word parameter is required' });
   }
 
-  const normalizedWord = word.toLowerCase().trim();
+  const normalizedWord = normalizeTurkish(word);
 
   try {
     const { data: cached } = await supabase

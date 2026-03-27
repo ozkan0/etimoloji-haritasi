@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import https from 'https';
 import { supabase } from '../../lib/supabaseClient';
+import { normalizeTurkish } from '../../utils/normalizeTurkish';
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,7 +12,7 @@ export default async function handler(
     return res.status(400).json({ error: 'Kelime parametresi eksik.' });
   }
 
-  const normalizedWord = word.toLowerCase().trim();
+  const normalizedWord = normalizeTurkish(word);
 
   try {
     const { data: cached } = await supabase
@@ -36,11 +36,6 @@ export default async function handler(
       return res.status(200).json({ meanings, example: cached.tdk_example });
     }
 
-    const agent = new https.Agent({
-      rejectUnauthorized: false,
-      keepAlive: true
-    });
-
     const tdkUrl = `https://sozluk.gov.tr/gts?ara=${encodeURIComponent(word)}`;
 
     const response = await fetch(tdkUrl, {
@@ -50,9 +45,7 @@ export default async function handler(
         'Accept': 'application/json, text/plain, */*',
         'Referer': 'https://sozluk.gov.tr/',
         'Connection': 'keep-alive'
-      },
-      // @ts-ignore
-      agent: agent
+      }
     });
 
     if (!response.ok) {

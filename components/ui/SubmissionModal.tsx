@@ -120,6 +120,8 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
     color: 'var(--sidebar-text-primary)',
     marginBottom: '15px', fontSize: '0.95rem',
     outline: 'none',
+    fontFamily: 'var(--font-albert-sans), sans-serif',
+    fontWeight: 500,
   };
 
   const modalContent = (
@@ -139,17 +141,18 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
           color: themeColor,
           fontSize: '1.25rem',
           textAlign: 'center',
-          fontWeight: 700
+          fontWeight: 700,
+          fontFamily: 'var(--font-albert-sans), sans-serif'
         }}>
           {title}
         </h2>
 
-        <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '20px', textAlign: 'center' }}>
+        <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '20px', textAlign: 'center', fontFamily: 'var(--font-albert-sans), sans-serif', fontWeight: 500 }}>
           <strong>{wordName}</strong> kelimesi için bildirimde bulunuyorsunuz.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: 600 }}>Konu Başlığı</label>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-albert-sans), sans-serif' }}>Konu Başlığı</label>
           <select
             style={inputStyle}
             value={category}
@@ -173,14 +176,14 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({ isOpen, onClose, type
           {errorMsg && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '10px', textAlign: 'center' }}>{errorMsg}</p>}
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--sidebar-text-secondary)', cursor: 'pointer' }}>İptal</button>
+            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--sidebar-text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-albert-sans), sans-serif', fontWeight: 600 }}>İptal</button>
             <button
               type="submit"
               disabled={isSubmitting}
               style={{
                 padding: '10px 20px', borderRadius: '8px', border: 'none',
                 background: themeColor, color: 'white', fontWeight: 600, cursor: isSubmitting ? 'wait' : 'pointer',
-                opacity: isSubmitting ? 0.7 : 1
+                opacity: isSubmitting ? 0.7 : 1, fontFamily: 'var(--font-albert-sans), sans-serif'
               }}
             >
               {isSubmitting ? 'Gönderiliyor...' : 'Gönder'}

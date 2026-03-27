@@ -6,22 +6,19 @@ const AboutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const [isHovered, setIsHovered] = React.useState(false);
 
   const buttonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '1px',
-    right: 0,
-    zIndex: 1000,
+    position: 'relative',
     cursor: 'pointer',
     background: 'var(--sidebar-header-bg)',
-    border: '1px solid #ccc',
-    borderRadius: '12px',
-    padding: '8px',
+    border: '1px solid var(--sidebar-border-color)',
+    borderRadius: '10px',
+    padding: '8px 10px',
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '38px',
+    width: '100%',
     height: '38px',
-    color: 'blue',
+    color: 'var(--sidebar-text-primary)',
     fontSize: '22px',
     fontWeight: 'bold',
     fontFamily: 'Georgia, serif',
@@ -31,8 +28,8 @@ const AboutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const darkButtonStyle: React.CSSProperties = {
     ...buttonStyle,
     backgroundColor: 'var(--sidebar-header-bg)',
-    borderColor: '#555',
-    color: 'cyan',
+    borderColor: 'var(--sidebar-border-color)',
+    color: 'var(--sidebar-text-primary)',
   };
 
   const buttonHoveredStyle: React.CSSProperties = {

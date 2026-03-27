@@ -17,8 +17,7 @@ const VerticalBarChart: React.FC<VerticalBarChartProps> = ({ title, data, color 
   return (
     <div style={containerStyle}>
       <h3 style={titleStyle}>{title}</h3>
-      
-      {/* Scrollable Chart Area */}
+
       <div className="styled-scrollbar" style={chartAreaStyle}>
         {data.map((item, index) => (
           <div key={item.label} style={columnContainerStyle}>
@@ -54,7 +53,7 @@ const VerticalBarChart: React.FC<VerticalBarChartProps> = ({ title, data, color 
         @keyframes growUp {
           to { transform: scaleY(1); }
         }
-        /* Elegant Scrollbar */
+
         .styled-scrollbar {
           scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
           scrollbar-width: thin;
@@ -104,7 +103,7 @@ const chartAreaStyle: React.CSSProperties = {
   overflowX: 'auto', 
   overflowY: 'hidden',
   height: '100%',
-  paddingBottom: '12px', /* extra padding for scrollbar */
+  paddingBottom: '12px',
 };
 
 const columnContainerStyle: React.CSSProperties = {
