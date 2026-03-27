@@ -6,11 +6,10 @@ interface ToggleRightSidebarButtonProps {
 }
 
 const ToggleRightSidebarButton: React.FC<ToggleRightSidebarButtonProps> = ({ isVisible, onClick }) => {
-  const PANEL_WIDTH = 380;
   const dynamicStyle: React.CSSProperties = {
-    right: isVisible ? `${PANEL_WIDTH - 1}px` : '0px',
+    right: isVisible ? 'calc(min(390px, 100vw) - 1px)' : '0px',
     position: 'fixed',
-    top: '50%',
+    top: 'calc(50% + 20px)',
     transform: 'translateY(-50%)',
     zIndex: 1002,
     width: '30px',

@@ -42,7 +42,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({ options, value, onChange }) =
         style={{
           width: '100%', padding: '12px 16px', borderRadius: '10px',
           border: isOpen ? '1px solid var(--detailspanel-header-bg)' : '1px solid var(--sidebar-border-color)',
-          backgroundColor: 'var(--sidebar-item-hover-bg)', color: 'var(--sidebar-text-primary)',
+          backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--sidebar-text-primary)',
           fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           transition: 'all 0.2s ease', boxShadow: isOpen ? '0 0 0 2px rgba(14, 165, 233, 0.2)' : 'none'
         }}
@@ -262,7 +262,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   const sliderLabelStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
   const rangeInputStyle: React.CSSProperties = { width: '100%', cursor: 'pointer', accentColor: 'var(--detailspanel-header-bg)' };
 
-  const segmentContainerStyle: React.CSSProperties = { display: 'flex', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '4px', gap: '4px', marginTop: '10px' };
+  const segmentContainerStyle: React.CSSProperties = { display: 'flex', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '4px', gap: '4px', marginTop: '4px' };
   const getSegmentStyle = (periodName: string, isActive: boolean): React.CSSProperties => {
     let backgroundColor = 'transparent';
     let borderColor = 'transparent';
@@ -334,7 +334,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
 
         {/* Embedded Filters Content */}
         <div style={{ 
-          display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px',
+          display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px',
           backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '14px',
           borderRadius: '10px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -363,7 +363,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
               <div style={getSegmentStyle('Cumhuriyet', activePeriodFilter === 'Cumhuriyet')} onClick={() => setActivePeriodFilter(prev => prev === 'Cumhuriyet' ? 'Tüm Dönemler' : 'Cumhuriyet')}>Cumhuriyet</div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '5px', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px', gap: '8px' }}>
               <button 
                 onClick={handleFetchList} 
                 disabled={isFetchingList}

@@ -247,7 +247,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     setIsRightSidebarVisible(false);
     setMapFlyToTarget(null);
     if (router.query.word) {
-      router.push('/', undefined, { shallow: true });
+      router.replace('/', undefined, { shallow: true });
     }
   }, [router]);
 
@@ -255,7 +255,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     setIsRightSidebarVisible(false);
     setDetailPanelWord(null);
     if (router.query.word) {
-      router.push('/', undefined, { shallow: true });
+      router.replace('/', undefined, { shallow: true });
     }
   }, [router]);
 
@@ -272,10 +272,10 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     const currentQuery = router.query.word;
     if (detailPanelWord) {
       if (currentQuery !== detailPanelWord.word) {
-        router.push(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
+        router.replace(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
       }
     }
-  }, [detailPanelWord, router.isReady]);
+  }, [detailPanelWord, router.isReady, router.query.word]);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -285,14 +285,10 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
     const resolveWordFromQuery = async () => {
       if (!queryWord || typeof queryWord !== 'string') {
-        if (detailPanelWord) {
-          setDetailPanelWord(null);
-          setIsRightSidebarVisible(false);
-        }
         return;
       }
 
-      if (detailPanelWord?.word?.toLocaleLowerCase('tr-TR') === queryWord.toLocaleLowerCase('tr-TR')) {
+      if (detailPanelWord) {
         return;
       }
 
@@ -321,7 +317,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     return () => {
       isMounted = false;
     };
-  }, [router.isReady, router.query.word, sidebarWords, mapWords, handleWordSelect, detailPanelWord, isRightSidebarVisible]);
+  }, [router.isReady, router.query.word, sidebarWords, mapWords, handleWordSelect, detailPanelWord]);
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>

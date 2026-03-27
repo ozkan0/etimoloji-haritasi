@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Word } from '../../types/types';
 import SubmissionModal from '../ui/SubmissionModal';
 import { trackEvent } from '../../lib/analytics';
@@ -50,45 +50,63 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'suggestion' | 'report'>('suggestion');
   const [isReported, setIsReported] = useState(false);
+  const lastLoadedWordKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
 
-    if (word) {
-      trackEvent('word_view', { word: word.word, id: word.id, lang: word.originLanguage });
-      setIsLoading(true);
-      setLiveData(null);
-      setIsReported(false);
-      setAiDetails(null);
-      setIsAiLoading(false);
-
-      getWordMeaning(word.word)
-        .then((data) => {
-          if (isMounted) {
-            setLiveData({
-              meanings: data.meanings || [],
-              example: data.example
-            });
-          }
-        })
-        .catch((err) => {
-          if (isMounted) {
-            console.error(err);
-            setLiveData({ meanings: [{ text: 'Bağlantı hatası.' }], example: null });
-          }
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
+    if (!word) {
+      lastLoadedWordKeyRef.current = null;
+      return () => {
+        isMounted = false;
+        controller.abort();
+        window.speechSynthesis.cancel();
+      };
     }
+
+    const stableWordKey = `${word.id}-${word.word.toLocaleLowerCase('tr-TR')}`;
+    if (lastLoadedWordKeyRef.current === stableWordKey) {
+      return () => {
+        isMounted = false;
+        controller.abort();
+        window.speechSynthesis.cancel();
+      };
+    }
+    lastLoadedWordKeyRef.current = stableWordKey;
+
+    trackEvent('word_view', { word: word.word, id: word.id, lang: word.originLanguage });
+    setIsLoading(true);
+    setLiveData(null);
+    setIsReported(false);
+    setAiDetails(null);
+    setIsAiLoading(false);
+
+    getWordMeaning(word.word)
+      .then((data) => {
+        if (isMounted) {
+          setLiveData({
+            meanings: data.meanings || [],
+            example: data.example
+          });
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error(err);
+          setLiveData({ meanings: [{ text: 'Bağlantı hatası.' }], example: null });
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
 
     return () => {
       isMounted = false;
       controller.abort();
       window.speechSynthesis.cancel();
     };
-  }, [word]);
+  }, [word?.id, word?.word, word?.originLanguage]);
 
   const handleClose = (e: React.MouseEvent) => { e.stopPropagation(); setTimeout(onClose, 300); };
 
@@ -133,36 +151,72 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   if (!word) return null;
 
   // --- STYLES ---
+  const detailPanelBodyBg = '#212934';
+
   let transformValue = 'translateX(100%)';
   if (isOpen) { transformValue = 'translateX(0)'; }
 
-  const panelStyle: React.CSSProperties = { position: 'absolute', top: '40px', right: '0', bottom: '0', height: 'auto', width: '380px', backgroundColor: 'var(--sidebar-main-bg)', borderLeft: '1px solid var(--sidebar-border-color)', borderTop: '1px solid var(--sidebar-border-color)', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', zIndex: 1002, transform: transformValue, transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)', display: 'flex', flexDirection: 'column', color: 'var(--sidebar-text-primary)', fontFamily: 'inherit', borderTopLeftRadius: '22px', borderTopRightRadius: '22px', overflow: 'hidden' };
-  const headerStyle: React.CSSProperties = { padding: '14px 22px', backgroundColor: 'var(--detailspanel-header-bg)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderTopLeftRadius: '22px', height: '56px', transition: 'background-color 0.2s' };
+  const panelStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '40px',
+    right: '0',
+    bottom: '0',
+    height: 'auto',
+    width: 'min(390px, 100vw)',
+    backgroundColor: detailPanelBodyBg,
+    borderLeft: '1px solid var(--sidebar-border-color)',
+    borderTop: '1px solid var(--sidebar-border-color)',
+    boxShadow: '-8px 0 28px rgba(0, 0, 0, 0.28)',
+    zIndex: 1002,
+    transform: transformValue,
+    transition: 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)',
+    display: 'flex',
+    flexDirection: 'column',
+    color: 'var(--sidebar-text-primary)',
+    fontFamily: 'inherit',
+    borderTopLeftRadius: '22px',
+    borderTopRightRadius: '22px',
+    overflow: 'hidden'
+  };
+  const headerStyle: React.CSSProperties = {
+    padding: '14px 22px',
+    backgroundColor: 'var(--detailspanel-header-bg)',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexShrink: 0,
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.22)',
+    borderTopLeftRadius: '22px',
+    height: '56px',
+    transition: 'background-color 0.2s'
+  };
   const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: 1, transition: 'opacity 0.2s' };
-  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: 'var(--sidebar-item-hover-bg)', flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
+  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: detailPanelBodyBg, flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
 
   const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-secondary)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
   const filterBadgeBaseStyle: React.CSSProperties = {
     ...badgeStyle,
     border: '1px solid rgba(255, 243, 224, 0.15)',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     boxShadow: 'none',
-    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    minHeight: '34px'
   };
   const getBadgeStyle = (type: 'language' | 'period', value: string): React.CSSProperties => {
     const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value);
     return {
       ...filterBadgeBaseStyle,
-      border: isActive ? '1px solid #F4A261' : '1px solid rgba(255, 243, 224, 0.15)',
-      backgroundColor: isActive ? 'rgba(244, 162, 97, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-      boxShadow: isActive ? '0 0 8px rgba(244, 162, 97, 0.5)' : 'none',
-      color: isActive ? '#FFF3E0' : 'var(--sidebar-text-secondary)'
+      border: isActive ? '1px solid #f0b77a' : '1px solid rgba(255, 243, 224, 0.16)',
+      backgroundColor: isActive ? 'rgba(240, 183, 122, 0.14)' : 'rgba(255, 255, 255, 0.04)',
+      boxShadow: isActive ? '0 0 0 1px rgba(240, 183, 122, 0.15), 0 0 10px rgba(240, 183, 122, 0.25)' : 'none',
+      color: isActive ? '#fff3e0' : 'var(--sidebar-text-secondary)'
     };
   };
   const labelStyle: React.CSSProperties = { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--sidebar-text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'block' };
   const textStyle: React.CSSProperties = { fontSize: '0.92rem', lineHeight: '1.55', margin: 0 };
   const primaryButtonStyle: React.CSSProperties = { textDecoration: 'none', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '6px', border: 'none', color: 'white', backgroundColor: 'var(--detailspanel-header-bg)', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', flex: '0 0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' };
-  const getRefButtonStyle = (btnId: string): React.CSSProperties => ({ textDecoration: 'none', fontSize: '0.9rem', padding: '12px 14px', borderRadius: '10px', backgroundColor: hoveredBtn === btnId ? 'var(--sidebar-item-hover-bg)' : 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', fontWeight: 500, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', flex: 1, transform: hoveredBtn === btnId ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hoveredBtn === btnId ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)' });
+  const getRefButtonStyle = (btnId: string): React.CSSProperties => ({ textDecoration: 'none', fontSize: '0.9rem', padding: '12px 14px', borderRadius: '10px', backgroundColor: hoveredBtn === btnId ? 'var(--sidebar-item-hover-bg)' : 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', fontWeight: 500, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', flex: 1, transform: hoveredBtn === btnId ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hoveredBtn === btnId ? '0 6px 14px rgba(0,0,0,0.18)' : '0 1px 3px rgba(0,0,0,0.08)' });
   const footerActionBtnStyle: React.CSSProperties = { flex: 1, padding: '8px 4px', height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' };
 
   const aiButtonStyle: React.CSSProperties = {
@@ -196,7 +250,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
           <div className="right-panel-content" style={contentStyle}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '16px' }}>
-                <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-1px' }}>{word.word}</h1>
+                <h1 style={{ margin: 0, fontSize: '2.35rem', fontWeight: 800, letterSpacing: '-0.8px', lineHeight: 1.05 }}>{word.word}</h1>
                 <button onClick={handleSpeak} title="Sesli Dinle" style={{
                   background: isPlaying ? 'var(--detailspanel-header-bg)' : 'var(--sidebar-item-hover-bg)',
                   border: '1px solid var(--sidebar-border-color)', borderRadius: '50%', width: '40px', height: '40px',
@@ -244,7 +298,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   <p style={textStyle}><span style={{ opacity: 0.6, fontStyle: 'italic' }}>Yükleniyor...</span></p>
                 ) : (
                   liveData.meanings?.map((m, idx) => (
-                    <div key={idx} style={{ backgroundColor: 'rgba(12, 24, 34, 0.92)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div key={idx} style={{ backgroundColor: '#0e1923', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {liveData.meanings.length > 1 && <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--sidebar-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Anlam {idx + 1}</span>}
                       {m.type && (
                         <span
@@ -253,7 +307,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                             fontFamily: 'var(--font-albert-sans), sans-serif',
                             fontWeight: 700,
                             fontSize: '0.72rem',
-                            backgroundColor: 'rgba(255,255,255,0.08)',
+                            backgroundColor: 'rgba(255,255,255,0.1)',
                             color: '#D17A5D',
                             padding: '2px 6px',
                             borderRadius: '4px',
@@ -283,7 +337,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
             <div>
               <div style={labelStyle}>ETİMOLOJİK VERİLER</div>
 
-              <div style={{ backgroundColor: 'rgb(35, 67, 74)', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ backgroundColor: '#1b353b', borderRadius: '12px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Köken Dil:</span>
                 <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#D17A5D' }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
@@ -400,7 +454,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
               </div>
 
               {aiDetails && (
-                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: 'rgba(14, 165, 233, 0.05)', border: '1px solid rgba(14, 165, 233, 0.2)', lineHeight: '1.5', fontSize: '0.9rem', color: 'var(--sidebar-text-primary)' }}>
+                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.25)', lineHeight: '1.5', fontSize: '0.9rem', color: 'var(--sidebar-text-primary)' }}>
                   {aiDetails}
                 </div>
               )}
