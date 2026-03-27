@@ -20,14 +20,11 @@ const BarChart: React.FC<BarChartProps> = ({ title, data, color = '#0ea5e9' }) =
       <div style={listStyle}>
         {data.map((item, index) => (
           <div key={item.label} style={rowStyle}>
-            
-            {/* Etiket ve Değer */}
             <div style={headerStyle}>
               <span style={labelStyle}>{item.label}</span>
               <span style={valueStyle}>{item.value}</span>
             </div>
 
-            {/* Bar Arkaplanı */}
             <div style={barBackgroundStyle}>
               <div 
                 className="stat-bar"
@@ -44,7 +41,6 @@ const BarChart: React.FC<BarChartProps> = ({ title, data, color = '#0ea5e9' }) =
         ))}
       </div>
 
-      {/* CSS Animasyonu */}
       <style jsx>{`
         .stat-bar {
           transform-origin: left;

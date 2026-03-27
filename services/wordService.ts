@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabaseClient';
+import { normalizePeriodLabel } from '../lib/constants';
 import { Word } from '../types/types';
+import { normalizeTurkish } from '../utils/normalizeTurkish';
 
 function getCalculatedPeriod(dateValue: any): string {
     if (typeof dateValue === 'number') {
@@ -16,7 +18,6 @@ function processWordRecord(w: any): Word {
         rawDateSortable = w.oldestHistory.dateSortable;
     }
 
-    // Parse to int just in case CSV imported it as string
     if (typeof rawDateSortable === 'string') {
         const match = rawDateSortable.match(/\d{3,4}/);
         if (match) {
@@ -37,9 +38,8 @@ function processWordRecord(w: any): Word {
         }
     }
 
-    const calculatedPeriod = w.period || getCalculatedPeriod(rawDateSortable);
+    const calculatedPeriod = normalizePeriodLabel(w.period || getCalculatedPeriod(rawDateSortable));
 
-    // Reconstruct oldestHistory object for frontend compatibility if missing
     let oldestHistoryObj = w.oldestHistory;
     if (!oldestHistoryObj && (w.oldest_dateSortable !== undefined || w.oldestDate !== undefined)) {
         oldestHistoryObj = {
@@ -72,7 +72,6 @@ function processWordRecord(w: any): Word {
         etymology_text: w.etymology || w.etymology_text,
         period: calculatedPeriod,
         source: w.oldestSource || w.source_book || w.oldestHistory?.source?.book || w.source || 'TDK',
-        // The user specifically requested `date` (label) to reflect oldest_dateSortable
         date: rawDateSortable || w.oldestDate || w.oldest_date || w.date,
         oldestHistory: oldestHistoryObj,
         formula: w.formula,
@@ -84,8 +83,6 @@ function processWordRecord(w: any): Word {
 
 export const wordService = {
     fetchSidebarWords: async (limit: number = 20): Promise<Word[]> => {
-        // Simple logic for a short duration: fetch a random chunk by taking advantage of a random offset.
-        // Assuming ~12000 words in the db.
         const randomOffset = Math.floor(Math.random() * 14000);
 
         const { data: rawData, error } = await supabase
@@ -108,10 +105,15 @@ export const wordService = {
     searchWords: async (query: string): Promise<Word[]> => {
         if (!query || query.trim() === '') return [];
 
+        const raw = query.trim();
+        const normalized = normalizeTurkish(raw);
+        if (!normalized) return [];
+
         const { data: rawData, error } = await supabase
-            .from('words_db')
-            .select('*')
-            .ilike('word', `%${query.trim()}%`)
+            .rpc('search_words_ranked', {
+                raw_query: raw,
+                search_query: normalized
+            })
             .limit(50);
 
         if (error) {
@@ -123,6 +125,24 @@ export const wordService = {
             return rawData.map(processWordRecord);
         }
         return [];
+    },
+
+    fetchWordByExact: async (word: string): Promise<Word | null> => {
+        if (!word || word.trim() === '') return null;
+
+        const { data: rawData, error } = await supabase
+            .from('words_db')
+            .select('*')
+            .ilike('word', word.trim())
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching exact word:', error);
+            return null;
+        }
+
+        return rawData ? processWordRecord(rawData) : null;
     },
 
     fetchFilteredWords: async (language: string, period: string, languageMode: 'origin' | 'immediate', limit: number = 300): Promise<Word[]> => {
@@ -148,7 +168,8 @@ export const wordService = {
         if (rawData) {
             let processed = rawData.map(processWordRecord);
             if (period !== 'Tüm Dönemler') {
-                processed = processed.filter(w => w.period === period);
+                const normalizedPeriod = normalizePeriodLabel(period);
+                processed = processed.filter(w => normalizePeriodLabel(w.period) === normalizedPeriod);
             }
             return processed;
         }

@@ -11,6 +11,7 @@ interface LiveTdkData {
 
 interface RightDetailPanelProps {
   word: Word | null;
+  isOpen: boolean;
   onClose: () => void;
   onFilterTrigger: (type: 'language' | 'period', value: string) => void;
   activeFilterLanguage: string;
@@ -30,13 +31,12 @@ const getFlagUrl = (lang: string) => {
 
 const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   word,
+  isOpen,
   onClose,
   onFilterTrigger,
   activeFilterLanguage,
   activeFilterPeriod
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [liveData, setLiveData] = useState<LiveTdkData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -56,8 +56,6 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     const controller = new AbortController();
 
     if (word) {
-      setIsVisible(true);
-      setIsMinimized(false);
       trackEvent('word_view', { word: word.word, id: word.id, lang: word.originLanguage });
       setIsLoading(true);
       setLiveData(null);
@@ -92,8 +90,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     };
   }, [word]);
 
-  const toggleMinimize = () => setIsMinimized(prev => !prev);
-  const handleClose = (e: React.MouseEvent) => { e.stopPropagation(); setIsVisible(false); setTimeout(onClose, 300); };
+  const handleClose = (e: React.MouseEvent) => { e.stopPropagation(); setTimeout(onClose, 300); };
 
   const handleSpeak = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,21 +130,37 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     }
   };
 
-  if (!word && !isVisible) return null;
+  if (!word) return null;
 
   // --- STYLES ---
   let transformValue = 'translateX(100%)';
-  if (isVisible) { transformValue = isMinimized ? 'translateY(calc(100% - 56px))' : 'translateY(0)'; }
+  if (isOpen) { transformValue = 'translateX(0)'; }
 
   const panelStyle: React.CSSProperties = { position: 'absolute', top: '40px', right: '0', bottom: '0', height: 'auto', width: '380px', backgroundColor: 'var(--sidebar-main-bg)', borderLeft: '1px solid var(--sidebar-border-color)', borderTop: '1px solid var(--sidebar-border-color)', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', zIndex: 1002, transform: transformValue, transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)', display: 'flex', flexDirection: 'column', color: 'var(--sidebar-text-primary)', fontFamily: 'inherit', borderTopLeftRadius: '22px', borderTopRightRadius: '22px', overflow: 'hidden' };
-  const headerStyle: React.CSSProperties = { padding: '14px 22px', backgroundColor: 'var(--detailspanel-header-bg)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderTopLeftRadius: '22px', cursor: 'pointer', height: '56px', transition: 'background-color 0.2s' };
-  const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
-  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: 'var(--sidebar-item-hover-bg)', flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: isMinimized ? 0 : 1, transition: 'opacity 0.2s' };
+  const headerStyle: React.CSSProperties = { padding: '14px 22px', backgroundColor: 'var(--detailspanel-header-bg)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderTopLeftRadius: '22px', height: '56px', transition: 'background-color 0.2s' };
+  const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: 1, transition: 'opacity 0.2s' };
+  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: 'var(--sidebar-item-hover-bg)', flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
 
   const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-secondary)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
-  const getBadgeStyle = (type: 'language' | 'period', value: string): React.CSSProperties => { const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value); return { ...badgeStyle, backgroundColor: isActive ? 'var(--detailspanel-header-bg)' : 'var(--sidebar-item-hover-bg)', border: isActive ? '1px solid transparent' : '1px solid var(--sidebar-border-color)', color: isActive ? 'white' : 'var(--sidebar-text-secondary)', boxShadow: isActive ? 'inset 0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)', }; };
+  const filterBadgeBaseStyle: React.CSSProperties = {
+    ...badgeStyle,
+    border: '1px solid rgba(255, 243, 224, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    boxShadow: 'none',
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+  };
+  const getBadgeStyle = (type: 'language' | 'period', value: string): React.CSSProperties => {
+    const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value);
+    return {
+      ...filterBadgeBaseStyle,
+      border: isActive ? '1px solid #F4A261' : '1px solid rgba(255, 243, 224, 0.15)',
+      backgroundColor: isActive ? 'rgba(244, 162, 97, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+      boxShadow: isActive ? '0 0 8px rgba(244, 162, 97, 0.5)' : 'none',
+      color: isActive ? '#FFF3E0' : 'var(--sidebar-text-secondary)'
+    };
+  };
   const labelStyle: React.CSSProperties = { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--sidebar-text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'block' };
-  const textStyle: React.CSSProperties = { fontSize: '1rem', lineHeight: '1.6', margin: 0 };
+  const textStyle: React.CSSProperties = { fontSize: '0.92rem', lineHeight: '1.55', margin: 0 };
   const primaryButtonStyle: React.CSSProperties = { textDecoration: 'none', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '6px', border: 'none', color: 'white', backgroundColor: 'var(--detailspanel-header-bg)', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', flex: '0 0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' };
   const getRefButtonStyle = (btnId: string): React.CSSProperties => ({ textDecoration: 'none', fontSize: '0.9rem', padding: '12px 14px', borderRadius: '10px', backgroundColor: hoveredBtn === btnId ? 'var(--sidebar-item-hover-bg)' : 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', fontWeight: 500, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', flex: 1, transform: hoveredBtn === btnId ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hoveredBtn === btnId ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)' });
   const footerActionBtnStyle: React.CSSProperties = { flex: 1, padding: '8px 4px', height: '36px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' };
@@ -156,9 +169,9 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     width: '100%',
     padding: '10px 16px',
     borderRadius: '8px',
-    border: '1px solid rgba(14, 165, 233, 0.3)',
-    background: 'linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%)',
-    color: 'white',
+    border: 'none',
+    background: 'rgb(38, 166, 154)',
+    color: '#FFFFFF',
     fontWeight: 600,
     fontSize: '0.9rem',
     cursor: 'pointer',
@@ -166,18 +179,15 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     alignItems: 'center',
     justifyContent: 'center',
     gap: '10px',
-    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
-    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 14px 0 rgba(11, 21, 23, 0.6)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   };
 
   return (
     <div style={panelStyle} className="right-panel-modern">
-      <div style={headerStyle} onClick={toggleMinimize} title={isMinimized ? "Expand Panel" : "Minimize Panel"}>
+      <div style={headerStyle}>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Detay Paneli</h2>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ transform: isMinimized ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', fontSize: '1.2rem', opacity: 0.8 }}>▼</div>
         </div>
       </div>
 
@@ -199,7 +209,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 <span className="shiny-effect" style={getBadgeStyle('language', (word as any).ultimateOriginLanguage || word.originLanguage)} title="Köken Dil" onClick={() => handleBadgeClick('language', (word as any).ultimateOriginLanguage || word.originLanguage)}>
                   {getFlagUrl((word as any).ultimateOriginLanguage || word.originLanguage) && <img src={getFlagUrl((word as any).ultimateOriginLanguage || word.originLanguage)!} alt={(word as any).ultimateOriginLanguage || word.originLanguage} style={{ width: '20px', height: '15px', borderRadius: '2px', objectFit: 'cover' }} />}
-                  {(word as any).ultimateOriginLanguage || word.originLanguage}
+                  <span style={{ color: 'inherit' }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
                 </span>
 
 
@@ -234,10 +244,31 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   <p style={textStyle}><span style={{ opacity: 0.6, fontStyle: 'italic' }}>Yükleniyor...</span></p>
                 ) : (
                   liveData.meanings?.map((m, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                      {liveData.meanings.length > 1 && <span style={{ fontWeight: 700, opacity: 0.8, color: 'var(--detailspanel-header-bg)', minWidth: '18px' }}>{idx + 1}.</span>}
-                      <p style={{ ...textStyle, flex: 1, margin: 0 }}>
-                        {m.type && <span style={{ fontStyle: 'italic', opacity: 0.7, marginRight: '6px' }}>[{m.type}]</span>}
+                    <div key={idx} style={{ backgroundColor: 'rgba(12, 24, 34, 0.92)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {liveData.meanings.length > 1 && <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--sidebar-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Anlam {idx + 1}</span>}
+                      {m.type && (
+                        <span
+                          title={m.type}
+                          style={{
+                            fontFamily: 'var(--font-albert-sans), sans-serif',
+                            fontWeight: 700,
+                            fontSize: '0.72rem',
+                            backgroundColor: 'rgba(255,255,255,0.08)',
+                            color: '#D17A5D',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            maxWidth: '140px',
+                            lineHeight: 1.2,
+                            width: 'fit-content'
+                          }}
+                        >
+                          {m.type}
+                        </span>
+                      )}
+                      <p style={{ ...textStyle, margin: 0, fontFamily: 'var(--font-albert-sans), sans-serif', color: 'var(--sidebar-text-primary)' }}>
                         {m.text}
                       </p>
                     </div>
@@ -252,17 +283,17 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
             <div>
               <div style={labelStyle}>ETİMOLOJİK VERİLER</div>
 
-              <div style={{ backgroundColor: 'var(--sidebar-item-hover-bg)', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ backgroundColor: 'rgb(35, 67, 74)', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Köken Dil:</span>
-                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(0, 255, 242, 0.85)' }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#D17A5D' }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
                 </div>
                 {((word as any).immediateSourceLanguage && (word as any).immediateSourceLanguage !== 'Unknown' && (word as any).immediateSourceLanguage !== ((word as any).ultimateOriginLanguage || word.originLanguage)) && (
                   <>
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Geçiş Dili:</span>
-                      <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>{(word as any).immediateSourceLanguage}</span>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#D17A5D' }}>{(word as any).immediateSourceLanguage}</span>
                     </div>
                   </>
                 )}
@@ -305,7 +336,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   <>
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <span style={{ fontSize: '1rem', color: 'rgba(0, 255, 242, 0.85)', lineHeight: '1.5', fontWeight: 700, opacity: 0.85 }}>{word.etymology_text}</span>
+                      <span style={{ fontSize: '1rem', color: '#FFF3E0', lineHeight: '1.5', fontWeight: 700, opacity: 0.85 }}>{word.etymology_text}</span>
                     </div>
                   </>
                 )}
@@ -339,15 +370,19 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                       fontSize: '0.85rem',
                       marginTop: '8px',
                       width: 'fit-content',
-                      alignSelf: 'center'
+                      alignSelf: 'center',
+                      fontFamily: 'var(--font-albert-sans), sans-serif',
+                      fontWeight: 600
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 6px 15px rgba(2, 132, 199, 0.35)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(11, 21, 23, 0.8)';
+                      e.currentTarget.style.backgroundColor = 'rgb(45, 180, 168)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.25)';
+                      e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(11, 21, 23, 0.6)';
+                      e.currentTarget.style.backgroundColor = 'rgb(38, 166, 154)';
                     }}
                   >
                     <div className="ai-ready-dot" style={{ width: '6px', height: '6px' }}></div>
@@ -398,10 +433,10 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
           </div>
 
           <div style={footerStyle}>
-            <button onClick={handleOpenSuggestion} style={{ ...footerActionBtnStyle, background: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--detailspanel-header-bg)', color: 'var(--detailspanel-header-bg)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--sidebar-main-bg)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--sidebar-item-hover-bg)'}>
+            <button onClick={handleOpenSuggestion} style={{ ...footerActionBtnStyle, background: 'transparent', border: '1.5px solid #00A896', color: '#00A896', borderRadius: '6px', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0, 168, 150, 0.12)'; e.currentTarget.style.borderColor = '#00C2AE'; e.currentTarget.style.color = '#00C2AE'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#00A896'; e.currentTarget.style.color = '#00A896'; }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Öneri
             </button>
-            <button onClick={handleOpenReport} disabled={isReported} style={{ ...footerActionBtnStyle, background: isReported ? 'transparent' : 'rgba(220, 53, 69, 0.1)', color: isReported ? 'green' : '#dc3545', border: isReported ? '1px solid green' : '1px solid #dc3545', cursor: isReported ? 'default' : 'pointer' }}>
+            <button onClick={handleOpenReport} disabled={isReported} style={{ ...footerActionBtnStyle, background: 'transparent', color: isReported ? 'green' : '#D64545', border: isReported ? '1.5px solid green' : '1.5px solid #D64545', borderRadius: '6px', transition: 'all 0.3s ease', cursor: isReported ? 'default' : 'pointer' }} onMouseEnter={(e) => { if (!isReported) { e.currentTarget.style.background = 'rgba(214, 69, 69, 0.12)'; e.currentTarget.style.borderColor = '#F05252'; e.currentTarget.style.color = '#F05252'; } }} onMouseLeave={(e) => { if (!isReported) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#D64545'; e.currentTarget.style.color = '#D64545'; } }}>
               {isReported ? (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Bildirildi</>) : (<><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Hata Bildir</>)}
             </button>
           </div>

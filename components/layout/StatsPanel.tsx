@@ -126,15 +126,13 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
 
   const activeData = displayMode === 'origin' ? langStats : immediateLangStats;
   const activeTitle = displayMode === 'origin' ? "Köken Dili Dağılımı" : "Geçiş Dili Dağılımı";
-  const activeColor = displayMode === 'origin' ? "#3b82f6" : "#10b981"; // Blue for Origin, Emerald for Immediate
+  const activeColor = displayMode === 'origin' ? "#3b82f6" : "#10b981";
 
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={panelStyle} onClick={(e) => e.stopPropagation()}>
         
-        {/* Header section with Update Date */}
         <div style={headerStyle}>
-            {/* Empty div to push the right-side flex items to the right using space-between */}
             <div />
             
             <div style={{
