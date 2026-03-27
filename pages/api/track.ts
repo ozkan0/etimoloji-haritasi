@@ -2,19 +2,52 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function readJsonBody(req: NextApiRequest): Promise<any | null> {
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+
+  if (chunks.length === 0) {
+    return null;
+  }
+
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { eventType, eventData, userAgent } = req.body;
+  const payload = await readJsonBody(req);
+  if (!payload || typeof payload !== 'object') {
+    return res.status(204).end();
+  }
+
+  const { eventType, eventData, userAgent } = payload;
 
   if (!eventType) {
-    return res.status(400).json({ message: 'Missing eventType' });
+    return res.status(204).end();
   }
 
   const forwarded = req.headers['x-forwarded-for'];

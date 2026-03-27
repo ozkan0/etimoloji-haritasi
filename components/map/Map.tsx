@@ -120,7 +120,7 @@ const Map: React.FC<MapProps> = ({
             word={word}
             isSelected={selectedWordKey === `${word.id}-${word.word}`}
             onClick={(e) => {
-              L.DomEvent.stopPropagation(e);
+              e.originalEvent?.stopPropagation();
               onMarkerClick(word);
             }}
           />

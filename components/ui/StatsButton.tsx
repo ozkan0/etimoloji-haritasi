@@ -4,17 +4,13 @@ const StatsButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const buttonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '1px',
-    right: '89px', 
-    zIndex: 1000,
+    position: 'relative',
     cursor: 'pointer',
     background: 'var(--sidebar-header-bg)',
-    border: '1px solid #ccc',
-    borderColor: '#555',
-    borderRadius: '12px',
-    padding: '8px',
-    width: '38px',
+    border: '1px solid var(--sidebar-border-color)',
+    borderRadius: '10px',
+    padding: '8px 10px',
+    width: '100%',
     height: '38px',
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
     display: 'flex',

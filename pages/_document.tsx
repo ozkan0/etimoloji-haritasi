@@ -4,7 +4,6 @@ export default function Document() {
   return (
     <Html lang="tr">
       <Head>
-        {/* The Leaflet CSS link now lives here permanently */}
         <link
           rel="stylesheet"
           href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"

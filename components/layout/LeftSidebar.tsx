@@ -1,15 +1,16 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Word } from '../../types/types';
 import { trackEvent } from '../../lib/analytics';
-import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES } from '../../lib/constants';
+import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES, normalizePeriodLabel } from '../../lib/constants';
 import { wordService } from '../../services/wordService';
 
 interface LeftSidebarProps {
   allWords: Word[];
   dailyWord?: Word | null;
   onWordSelect: (word: Word) => void;
+  onHomeClick: () => void;
   isVisible: boolean;
-  onFilterChange: (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, limitPerLanguage: number, languageMode: 'origin' | 'immediate') => void;
+  onFilterChange: (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, languageMode: 'origin' | 'immediate') => void;
   externalFilterTrigger?: { type: 'language' | 'period', value: string, timestamp: number } | null;
 }
 
@@ -41,7 +42,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({ options, value, onChange }) =
         style={{
           width: '100%', padding: '12px 16px', borderRadius: '10px',
           border: isOpen ? '1px solid var(--detailspanel-header-bg)' : '1px solid var(--sidebar-border-color)',
-          backgroundColor: 'var(--sidebar-item-hover-bg)', color: 'var(--sidebar-text-primary)',
+          backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--sidebar-text-primary)',
           fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           transition: 'all 0.2s ease', boxShadow: isOpen ? '0 0 0 2px rgba(14, 165, 233, 0.2)' : 'none'
         }}
@@ -83,7 +84,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({ options, value, onChange }) =
   );
 };
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSelect, isVisible, onFilterChange, externalFilterTrigger }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSelect, onHomeClick, isVisible, onFilterChange, externalFilterTrigger }) => {
 
   // --- STATE ---
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
@@ -92,10 +93,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   const [isSearching, setIsSearching] = useState(false);
 
   const [activeLanguageFilter, setActiveLanguageFilter] = useState('Tüm Diller');
-  const [activePeriodFilter, setActivePeriodFilter] = useState<'Tüm Dönemler' | 'Osmanlı Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
+  const [activePeriodFilter, setActivePeriodFilter] = useState<'Tüm Dönemler' | 'O. Öncesi' | 'Osmanlı' | 'Cumhuriyet'>('Tüm Dönemler');
   const [languageMode, setLanguageMode] = useState<'origin' | 'immediate'>('origin');
-
-  const [limitPerLanguage, setLimitPerLanguage] = useState(5);
 
   const [currentPage, setCurrentPage] = useState(1);
   const RESULTS_PER_PAGE = 20;
@@ -110,7 +109,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
       if (externalFilterTrigger.type === 'language') {
         setActiveLanguageFilter(prev => prev === externalFilterTrigger.value ? 'Tüm Diller' : externalFilterTrigger.value);
       } else if (externalFilterTrigger.type === 'period') {
-        setActivePeriodFilter(prev => prev === externalFilterTrigger.value ? 'Tüm Dönemler' : externalFilterTrigger.value as any);
+        const normalizedPeriod = normalizePeriodLabel(externalFilterTrigger.value);
+        setActivePeriodFilter(prev => prev === normalizedPeriod ? 'Tüm Dönemler' : normalizedPeriod as any);
       }
     }
   }, [externalFilterTrigger]);
@@ -148,7 +148,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
 
   const filteredWordsForList = useMemo(() => {
     const dataSource = (searchQuery.trim() || isFilteredListActive) ? searchResults : allWords;
-    return [...dataSource].sort((a, b) => a.word.localeCompare(b.word, 'tr'));
+    return [...dataSource];
   }, [allWords, searchResults, searchQuery, isFilteredListActive]);
 
   // --- PAGINATION LOGIC ---
@@ -161,8 +161,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
 
   // --- UPDATE PARENT ---
   useEffect(() => {
-    onFilterChange(activeSearchTerm, true, activeLanguageFilter, activePeriodFilter, limitPerLanguage, languageMode);
-  }, [activeSearchTerm, activeLanguageFilter, activePeriodFilter, limitPerLanguage, languageMode]);
+    onFilterChange(activeSearchTerm, true, activeLanguageFilter, normalizePeriodLabel(activePeriodFilter), languageMode);
+  }, [activeSearchTerm, activeLanguageFilter, activePeriodFilter, languageMode]);
 
   // --- ANALYTICS TRACKING ---
   useEffect(() => {
@@ -235,7 +235,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
     setSearchQuery('');
     
     try {
-      const results = await wordService.fetchFilteredWords(activeLanguageFilter, activePeriodFilter, languageMode, 300);
+      const results = await wordService.fetchFilteredWords(activeLanguageFilter, normalizePeriodLabel(activePeriodFilter), languageMode, 300);
       setSearchResults(results);
       setIsFilteredListActive(true);
     } catch (e) {
@@ -246,23 +246,23 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   };
 
   // --- STYLES ---
-  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: '350px', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '22px', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
-  const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: 'var(--sidebar-header-bg)', color: 'white' };
+  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: '350px', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '0 22px 22px 0', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
+  const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: '#2d3a4d', color: 'white' };
 
-  const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '10px', backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.25)', padding: '4px 10px' };
-  const searchInputStyle: React.CSSProperties = { flex: 1, border: 'none', background: 'transparent', padding: '10px 5px', color: 'white', fontSize: '0.95rem', outline: 'none', fontFamily: 'inherit' };
+  const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '14px', backgroundColor: '#1A2629', borderRadius: '8px', border: '1px solid rgba(255, 243, 224, 0.1)', padding: '4px 10px' };
+  const searchInputStyle: React.CSSProperties = { flex: 1, border: 'none', background: 'transparent', padding: '10px 5px', color: '#FFF3E0', fontSize: '0.95rem', outline: 'none', fontFamily: 'inherit' };
   const clearButtonStyle: React.CSSProperties = { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'rgba(255, 255, 255, 0.7)', padding: '0 5px' };
 
-  const wordListStyle: React.CSSProperties = { listStyle: 'none', margin: 0, padding: '10px', overflowY: 'auto', flex: 1, paddingBottom: '90px' };
+  const wordListStyle: React.CSSProperties = { listStyle: 'none', margin: 0, padding: '10px', overflowY: 'auto', flex: 1, paddingBottom: '90px', backgroundColor: '#172326' };
   const wordItemStyle: React.CSSProperties = { padding: '12px 10px', cursor: 'pointer', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', borderRadius: '10px', marginBottom: '4px', borderLeft: '4px solid transparent' };
-  const wordDetailStyle: React.CSSProperties = { color: 'var(--sidebar-text-secondary)', marginTop: '4px', fontSize: '0.8rem', opacity: 0.8 };
+  const wordDetailStyle: React.CSSProperties = { color: '#6A8688', marginTop: '4px', fontSize: '0.8rem', opacity: 0.95 };
   const footerStyle: React.CSSProperties = { position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: 'var(--sidebar-header-bg)', color: 'white', padding: '15px 20px', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 10, boxShadow: '0 -4px 15px rgba(0,0,0,0.15)', cursor: 'pointer', borderBottomLeftRadius: '22px', borderBottomRightRadius: '22px' };
   const resetButtonStyle: React.CSSProperties = { padding: '8px 16px', backgroundColor: 'rgba(255, 99, 71, 0.15)', border: '1px solid rgba(255, 99, 71, 0.4)', color: '#ffcccc', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap', fontFamily: 'inherit' };
   const paginationButtonStyle: React.CSSProperties = { padding: '6px 12px', backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'white', borderRadius: '6px', fontSize: '0.8rem', transition: 'all 0.2s', fontFamily: 'inherit' };
   const sliderLabelStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
   const rangeInputStyle: React.CSSProperties = { width: '100%', cursor: 'pointer', accentColor: 'var(--detailspanel-header-bg)' };
 
-  const segmentContainerStyle: React.CSSProperties = { display: 'flex', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '4px', gap: '4px', marginTop: '10px' };
+  const segmentContainerStyle: React.CSSProperties = { display: 'flex', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '4px', gap: '4px', marginTop: '4px' };
   const getSegmentStyle = (periodName: string, isActive: boolean): React.CSSProperties => {
     let backgroundColor = 'transparent';
     let borderColor = 'transparent';
@@ -296,10 +296,26 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   return (
     <div style={dynamicSidebarStyle} className="sidebar-main">
       <div style={headerStyle} className="sidebar-header">
-        <style jsx>{` .modern-input::placeholder { color: white; opacity: 0.6; } `}</style>
+        <style jsx>{` .modern-input::placeholder { color: #FFF3E0; opacity: 0.55; } `}</style>
 
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '5px' }}>
-          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Etimoloji Haritası</h2>
+          <button
+            onClick={onHomeClick}
+            style={{
+              margin: 0,
+              padding: 0,
+              fontSize: '1.4rem',
+              fontWeight: 800,
+              border: 'none',
+              background: 'transparent',
+              color: 'inherit',
+              cursor: 'pointer',
+              fontFamily: 'inherit'
+            }}
+            title="Ana sayfaya dön"
+          >
+            Etimoloji Haritası
+          </button>
         </div>
 
         <div style={searchContainerStyle}>
@@ -318,7 +334,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
 
         {/* Embedded Filters Content */}
         <div style={{ 
-          display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px',
+          display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px',
           backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '14px',
           borderRadius: '10px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -342,12 +358,12 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
             </div>
 
             <div style={segmentContainerStyle}>
-              <div style={getSegmentStyle('Osmanlı Öncesi', activePeriodFilter === 'Osmanlı Öncesi')} onClick={() => setActivePeriodFilter(prev => prev === 'Osmanlı Öncesi' ? 'Tüm Dönemler' : 'Osmanlı Öncesi')}>Osmanlı Öncesi</div>
+              <div style={getSegmentStyle('O. Öncesi', activePeriodFilter === 'O. Öncesi')} onClick={() => setActivePeriodFilter(prev => prev === 'O. Öncesi' ? 'Tüm Dönemler' : 'O. Öncesi')}>O. Öncesi</div>
               <div style={getSegmentStyle('Osmanlı', activePeriodFilter === 'Osmanlı')} onClick={() => setActivePeriodFilter(prev => prev === 'Osmanlı' ? 'Tüm Dönemler' : 'Osmanlı')}>Osmanlı</div>
               <div style={getSegmentStyle('Cumhuriyet', activePeriodFilter === 'Cumhuriyet')} onClick={() => setActivePeriodFilter(prev => prev === 'Cumhuriyet' ? 'Tüm Dönemler' : 'Cumhuriyet')}>Cumhuriyet</div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '5px', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px', gap: '8px' }}>
               <button 
                 onClick={handleFetchList} 
                 disabled={isFetchingList}
@@ -372,26 +388,18 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
             </div>
         </div>
 
-        {/* Marker Limits - Always Visible */}
-        <div style={{ marginTop: '5px', padding: '0 4px' }}>
-          <div style={sliderLabelStyle}>
-            <span>Haritada Dil Başına Kelime</span>
-            <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>{limitPerLanguage}</span>
-          </div>
-          <input type="range" min="5" max="25" step="1" value={limitPerLanguage} onChange={(e) => setLimitPerLanguage(parseInt(e.target.value))} style={rangeInputStyle} />
-        </div>
       </div>
 
       <ul style={wordListStyle}>
         {!isSearching && (
-          <div style={{ padding: '0 10px 10px 10px', fontSize: '0.8rem', color: 'var(--sidebar-text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ padding: '0 10px 10px 10px', fontSize: '0.8rem', color: '#6A8688', display: 'flex', justifyContent: 'space-between' }}>
             <span>{filteredWordsForList.length} kelime bulundu</span>
             {filteredWordsForList.length > 0 && <span>Sayfa {currentPage} / {totalPages}</span>}
           </div>
         )}
         
         {isSearching && (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--sidebar-text-secondary)', opacity: 0.7, fontStyle: 'italic' }}>Aranıyor...</div>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#6A8688', opacity: 0.8, fontStyle: 'italic' }}>Aranıyor...</div>
         )}
         
         {!isSearching && paginatedWords.map(word => (
@@ -405,7 +413,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
         ))}
         
         {!isSearching && filteredWordsForList.length === 0 && (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--sidebar-text-secondary)', opacity: 0.7 }}>Sonuç bulunamadı.</div>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#6A8688', opacity: 0.8 }}>Sonuç bulunamadı.</div>
         )}
 
         {/* Pagination Controls */}

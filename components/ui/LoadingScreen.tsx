@@ -55,7 +55,6 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
         }
 
         .title {
-          /* Inherits Lora from wrapper class */
           font-size: 3rem;
           font-weight: 700;
           margin: 0;

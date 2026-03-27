@@ -11,9 +11,8 @@ import RightDetailPanel from '../components/layout/RightDetailPanel';
 import AboutPanel from '../components/layout/AboutPanel';
 import StatsPanel from '../components/layout/StatsPanel';
 import ToggleSidebarButton from '../components/ui/ToggleSidebarButton';
-import ThemeSwitch from '../components/ui/ThemeSwitch';
-import AboutButton from '../components/ui/AboutButton';
-import StatsButton from '../components/ui/StatsButton';
+import ToggleRightSidebarButton from '../components/ui/ToggleRightSidebarButton';
+import SettingsMenu from '../components/ui/SettingsMenu';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import MetaHead from '../components/ui/MetaHead';
 
@@ -25,6 +24,7 @@ import TimeSlider from '../components/features/timeline/TimeSlider';
 import { Word, Language, WordOnMap } from '../types/types';
 import { getRandomCoordinatesInBoundingBox } from '../utils/geoUtils';
 import { useEtymologyData } from '../hooks/useEtymologyData';
+import { wordService } from '../services/wordService';
 
 const mapOriginLanguageToTurkish = (lang: string): string => {
   const codeMap: Record<string, string> = {
@@ -80,6 +80,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   // --- UI STATES ---
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(false);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
 
@@ -201,11 +202,10 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   // --- HANDLERS ---
 
-  const handleFilterChange = (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, limit: number, languageMode: 'origin' | 'immediate') => {
+  const handleFilterChange = (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, languageMode: 'origin' | 'immediate') => {
     setCurrentSearchTerm(searchTerm);
     setCurrentActiveLang(activeLang);
     setCurrentActivePeriod(activePeriod);
-    setLimitPerLang(limit);
     setCurrentLanguageMode(languageMode);
   };
 
@@ -217,6 +217,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     );
 
     setDetailPanelWord(selectedWord);
+  setIsRightSidebarVisible(true);
 
     const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
     if (existingWord) {
@@ -231,14 +232,38 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     }
   }, [allLanguages, wordsOnMap]);
 
-  const handleMarkerClick = (word: WordOnMap) => { setDetailPanelWord(word); };
+  const handleMarkerClick = (word: WordOnMap) => {
+    setDetailPanelWord(word);
+    setIsRightSidebarVisible(true);
+  };
 
   const handleQuickFilter = (type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
   };
 
+  const handleGoHome = useCallback(() => {
+    setDetailPanelWord(null);
+    setIsRightSidebarVisible(false);
+    setMapFlyToTarget(null);
+    if (router.query.word) {
+      router.replace('/', undefined, { shallow: true });
+    }
+  }, [router]);
+
+  const handleCloseDetailPanel = useCallback(() => {
+    setIsRightSidebarVisible(false);
+    setDetailPanelWord(null);
+    if (router.query.word) {
+      router.replace('/', undefined, { shallow: true });
+    }
+  }, [router]);
+
   const toggleSidebar = () => setIsSidebarVisible(prev => !prev);
+  const toggleRightSidebar = () => {
+    if (!detailPanelWord) return;
+    setIsRightSidebarVisible(prev => !prev);
+  };
   const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
 
   // --- URL SYNC ---
@@ -247,25 +272,52 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     const currentQuery = router.query.word;
     if (detailPanelWord) {
       if (currentQuery !== detailPanelWord.word) {
-        router.push(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
+        router.replace(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
       }
-    } else {
-      if (currentQuery) router.push('/', undefined, { shallow: true });
     }
-  }, [detailPanelWord, router.isReady]);
+  }, [detailPanelWord, router.isReady, router.query.word]);
 
   useEffect(() => {
-    if (!router.isReady || sidebarWords.length === 0) return;
+    if (!router.isReady) return;
     const queryWord = router.query.word;
-    if (queryWord && typeof queryWord === 'string') {
-      if (detailPanelWord?.word !== queryWord) {
-        const target = sidebarWords.find(w => w.word.toLocaleLowerCase('tr-TR') === queryWord.toLocaleLowerCase('tr-TR'));
-        if (target) handleWordSelect(target);
+
+    let isMounted = true;
+
+    const resolveWordFromQuery = async () => {
+      if (!queryWord || typeof queryWord !== 'string') {
+        return;
       }
-    } else {
-      if (detailPanelWord) setDetailPanelWord(null);
-    }
-  }, [router.isReady, router.query.word, sidebarWords, handleWordSelect]);
+
+      if (detailPanelWord) {
+        return;
+      }
+
+      const normalizedQuery = queryWord.toLocaleLowerCase('tr-TR');
+      const localMatch = [...sidebarWords, ...mapWords].find(
+        (w) => w.word.toLocaleLowerCase('tr-TR') === normalizedQuery
+      );
+
+      if (localMatch) {
+        if (isMounted) {
+          handleWordSelect(localMatch);
+          setIsRightSidebarVisible(true);
+        }
+        return;
+      }
+
+      const fetched = await wordService.fetchWordByExact(queryWord);
+      if (isMounted && fetched) {
+        handleWordSelect(fetched);
+        setIsRightSidebarVisible(true);
+      }
+    };
+
+    resolveWordFromQuery();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router.isReady, router.query.word, sidebarWords, mapWords, handleWordSelect, detailPanelWord]);
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden' }}>
@@ -273,16 +325,24 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       <MetaHead selectedWord={detailPanelWord} />
 
       <LoadingScreen isLoading={isLoading} />
-      <AboutButton onClick={toggleAboutPanel} />
-      <StatsButton onClick={() => setIsStatsPanelOpen(true)} />
+      <SettingsMenu 
+        onAboutClick={toggleAboutPanel} 
+        onStatsClick={() => setIsStatsPanelOpen(true)} 
+        limitPerLang={limitPerLang} 
+        onLimitChange={setLimitPerLang} 
+      />
 
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
+      {detailPanelWord && (
+        <ToggleRightSidebarButton isVisible={isRightSidebarVisible} onClick={toggleRightSidebar} />
+      )}
 
       <LeftSidebar
         allWords={sidebarWords}
         dailyWord={dailyWord}
         onWordSelect={handleWordSelect}
+        onHomeClick={handleGoHome}
         isVisible={isSidebarVisible}
         onFilterChange={handleFilterChange}
         externalFilterTrigger={filterTrigger}
@@ -302,16 +362,16 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         year={selectedYear}
         onChange={setSelectedYear}
         isLeftOpen={isSidebarVisible}
-        isRightOpen={detailPanelWord !== null}
+        isRightOpen={detailPanelWord !== null && isRightSidebarVisible}
         disabled={false}
       />
 
       <NewsTicker newsItems={newsItems} />
-      <ThemeSwitch />
 
       <RightDetailPanel
         word={detailPanelWord}
-        onClose={() => setDetailPanelWord(null)}
+        isOpen={isRightSidebarVisible}
+        onClose={handleCloseDetailPanel}
         onFilterTrigger={handleQuickFilter}
         activeFilterLanguage={currentActiveLang}
         activeFilterPeriod={currentActivePeriod}

@@ -6,28 +6,27 @@ const ThemeSwitch = () => {
   const [isHovered, setIsHovered] = React.useState(false);
 
   const switchStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '1px',
-    right: '16px',
-    transform: 'translateX(-50%)',
-    zIndex: 1000,
+    position: 'relative',
+    width: '100%',
+    height: '38px',
     cursor: 'pointer',
     background: 'var(--sidebar-header-bg)',
-    border: '1px solid #ccc',
-    borderRadius: '12px',
-    padding: '8px',
-    fontSize: '1.2rem',
+    border: '1px solid var(--sidebar-border-color)',
+    borderRadius: '10px',
+    padding: '8px 10px',
+    fontSize: '1rem',
     lineHeight: 1,
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    color: 'var(--sidebar-text-primary)',
   };
   
   const darkSwitchStyle: React.CSSProperties = {
     ...switchStyle,
     backgroundColor: 'var(--sidebar-header-bg)',
-    borderColor: '#555',
+    borderColor: 'var(--sidebar-border-color)',
   };
   const switchHoveredStyle: React.CSSProperties = {
     backgroundColor: 'var(--main-buttons-hover-bg)',

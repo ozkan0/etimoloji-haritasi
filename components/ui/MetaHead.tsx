@@ -6,12 +6,10 @@ interface MetaHeadProps {
 }
 
 const MetaHead: React.FC<MetaHeadProps> = ({ selectedWord }) => {
-  // Base constants
   const siteName = 'Etimoloji Haritası';
   const baseUrl = 'https://etimoloji-haritasi.vercel.app';
   const defaultDesc = 'Türkçe kelimelerin kökenlerini coğrafi ve tarihsel bir bağlamda keşfetmenizi sağlayan interaktif harita.';
 
-  // Dynamic values
   const title = selectedWord 
     ? `${selectedWord.word} - ${siteName}` 
     : siteName;
