@@ -52,18 +52,26 @@ body {
 
 /* Dark Theme */
 [data-theme='dark'] {
-  --sidebar-main-bg: #212934;
-  --sidebar-header-bg: #23434A;
+  --sidebar-main-bg: #0D1517;
+  --sidebar-header-bg: #253347;
   --sidebar-border-color: #2E3A48;
   --sidebar-text-primary: #f5f5f5;
   --sidebar-text-secondary: #788A94;
   --sidebar-item-hover-bg: #2C3540;
 
-  --detailspanel-header-bg: #23434A;
-  --detailspanel-header-bg-hover: #1a3338;
+  --detailspanel-header-bg: #1E4D57;
+  --detailspanel-header-bg-hover: #163a41;
+  --detailspanel-bg: #16212E;
 
-  --main-buttons-bg: #2A3A40;
-  --main-buttons-hover-bg: #1D2A2E;
+  --etymology-section-bg: #162E35;
+  --etymology-text: #F1E9DA;
+  --orange-accent: #FF7043;
+  --controversial-text: #FFD54F;
+  --word-of-the-day-label: #FACC15;
+  --listeye-getir-btn: rgba(59, 130, 246, 0.25);
+
+  --main-buttons-bg: #253347;
+  --main-buttons-hover-bg: #1A2634;
 
   --popup-background: #2d2d2d;
   --popup-text-primary: #f5f5f5;
@@ -244,7 +252,7 @@ body {
   z-index: 1100;
   height: 60px;
   width: 30px;
-  background-color: rgb(35, 67, 74);
+  background-color: var(--detailspanel-header-bg);
   color: white;
   border: none;
   border-top-left-radius: 8px;
@@ -259,7 +267,7 @@ body {
 }
 
 .toggle-right-sidebar-button:hover {
-  background-color: rgb(45, 87, 94);
+  background-color: var(--detailspanel-header-bg-hover);
 }
 
 
@@ -404,7 +412,7 @@ body {
   cursor: pointer;
   border-bottom-left-radius: 22px;
   border-bottom-right-radius: 22px;
-  background: #213539;
+  background: var(--sidebar-main-bg);
   border: none;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
   transition: all 0.3s ease;
@@ -412,7 +420,7 @@ body {
 }
 
 [data-theme='dark'] .word-of-the-day-card {
-  background: #213539;
+  background: var(--sidebar-main-bg);
   border: none;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
 }
@@ -430,7 +438,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--highlight-muted-gold);
+  color: var(--word-of-the-day-label);
   margin-bottom: 4px;
 }
 
@@ -442,7 +450,7 @@ body {
 
 .word-of-the-day-lang {
   font-size: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 2px 8px;
   border-radius: 6px;

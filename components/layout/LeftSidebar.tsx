@@ -247,13 +247,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
 
   // --- STYLES ---
   const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: '350px', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '0 22px 22px 0', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
-  const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: '#2d3a4d', color: 'white' };
+  const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: 'var(--sidebar-header-bg)', color: 'white' };
 
-  const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '14px', backgroundColor: '#1A2629', borderRadius: '8px', border: '1px solid rgba(255, 243, 224, 0.1)', padding: '4px 10px' };
+  const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '14px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255, 243, 224, 0.1)', padding: '4px 10px' };
   const searchInputStyle: React.CSSProperties = { flex: 1, border: 'none', background: 'transparent', padding: '10px 5px', color: '#FFF3E0', fontSize: '0.95rem', outline: 'none', fontFamily: 'inherit' };
   const clearButtonStyle: React.CSSProperties = { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'rgba(255, 255, 255, 0.7)', padding: '0 5px' };
 
-  const wordListStyle: React.CSSProperties = { listStyle: 'none', margin: 0, padding: '10px', overflowY: 'auto', flex: 1, paddingBottom: '90px', backgroundColor: '#172326' };
+  const wordListStyle: React.CSSProperties = { listStyle: 'none', margin: 0, padding: '10px', overflowY: 'auto', flex: 1, paddingBottom: '90px', backgroundColor: 'var(--sidebar-main-bg)' };
   const wordItemStyle: React.CSSProperties = { padding: '12px 10px', cursor: 'pointer', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', borderRadius: '10px', marginBottom: '4px', borderLeft: '4px solid transparent' };
   const wordDetailStyle: React.CSSProperties = { color: '#6A8688', marginTop: '4px', fontSize: '0.8rem', opacity: 0.95 };
   const footerStyle: React.CSSProperties = { position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: 'var(--sidebar-header-bg)', color: 'white', padding: '15px 20px', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 10, boxShadow: '0 -4px 15px rgba(0,0,0,0.15)', cursor: 'pointer', borderBottomLeftRadius: '22px', borderBottomRightRadius: '22px' };
@@ -266,30 +266,37 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   const getSegmentStyle = (periodName: string, isActive: boolean): React.CSSProperties => {
     let backgroundColor = 'transparent';
     let borderColor = 'transparent';
+    let boxShadow = 'none';
 
     if (isActive) {
-      switch (periodName) {
-        case PERIOD_NAMES.OSMANLI_ONCESI:
-          backgroundColor = PERIOD_COLORS.OSMANLI_ONCESI.bg;
-          borderColor = PERIOD_COLORS.OSMANLI_ONCESI.border;
-          break;
-        case PERIOD_NAMES.OSMANLI:
-          backgroundColor = PERIOD_COLORS.OSMANLI.bg;
-          borderColor = PERIOD_COLORS.OSMANLI.border;
-          break;
-        case PERIOD_NAMES.CUMHURIYET:
-          backgroundColor = PERIOD_COLORS.CUMHURIYET.bg;
-          borderColor = PERIOD_COLORS.CUMHURIYET.border;
-          break;
-        default:
-          backgroundColor = PERIOD_COLORS.DEFAULT;
+      if (periodName === 'Köken Dil' || periodName === 'Geçiş Dili') {
+        backgroundColor = 'rgba(45, 212, 191, 0.15)';
+        borderColor = 'rgba(45, 212, 191, 0.4)';
+        boxShadow = '0 0 8px rgba(45, 212, 191, 0.15)';
+      } else {
+        switch (periodName) {
+          case PERIOD_NAMES.OSMANLI_ONCESI:
+            backgroundColor = PERIOD_COLORS.OSMANLI_ONCESI.bg;
+            borderColor = PERIOD_COLORS.OSMANLI_ONCESI.border;
+            break;
+          case PERIOD_NAMES.OSMANLI:
+            backgroundColor = PERIOD_COLORS.OSMANLI.bg;
+            borderColor = PERIOD_COLORS.OSMANLI.border;
+            break;
+          case PERIOD_NAMES.CUMHURIYET:
+            backgroundColor = PERIOD_COLORS.CUMHURIYET.bg;
+            borderColor = PERIOD_COLORS.CUMHURIYET.border;
+            break;
+          default:
+            backgroundColor = PERIOD_COLORS.DEFAULT;
+        }
       }
     }
     return {
       flex: 1, padding: '8px 2px', fontSize: '0.75rem', textAlign: 'center', cursor: 'pointer', borderRadius: '6px',
       backgroundColor: backgroundColor, border: isActive ? `1px solid ${borderColor}` : '1px solid transparent',
-      color: isActive ? 'white' : 'rgba(255,255,255,0.7)', fontWeight: isActive ? 700 : 500, transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-      userSelect: 'none', whiteSpace: 'normal', lineHeight: '1.2', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40px', boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.2)' : 'none'
+      color: isActive ? ((periodName === 'Köken Dil' || periodName === 'Geçiş Dili') ? '#2DD4BF' : 'white') : 'rgba(255,255,255,0.7)', fontWeight: isActive ? 700 : 500, transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+      userSelect: 'none', whiteSpace: 'normal', lineHeight: '1.2', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40px', boxShadow: boxShadow || (isActive ? '0 2px 4px rgba(0,0,0,0.2)' : 'none')
     };
   };
 
@@ -371,8 +378,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
                 style={{ 
                   flex: 1,
                   padding: '8px 16px', 
-                  backgroundColor: 'rgba(2, 132, 199, 0.25)', 
-                  border: '1px solid rgba(2, 132, 199, 0.5)', 
+                  backgroundColor: 'var(--listeye-getir-btn)', 
+                  border: '1px solid rgba(59, 130, 246, 0.5)', 
                   color: 'white', 
                   borderRadius: '8px', 
                   cursor: isFetchingList ? 'wait' : 'pointer', 
@@ -439,14 +446,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
       </ul>
 
       {dailyWord && (
-        <div className="word-of-the-day-card" onClick={() => onWordSelect(dailyWord)}>
-          <div className="word-of-the-day-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <div className="word-of-the-day-card" onClick={() => onWordSelect(dailyWord)} style={{ backgroundColor: 'var(--sidebar-main-bg)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="word-of-the-day-badge" style={{ color: 'var(--word-of-the-day-label)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#FACC15' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             GÜNÜN KELİMESİ
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-            <div className="word-of-the-day-title">{dailyWord.word}</div>
-            <div className="word-of-the-day-lang">{(dailyWord as any).ultimateOriginLanguage || dailyWord.originLanguage}</div>
+            <div className="word-of-the-day-title" style={{ fontSize: '1.4rem', letterSpacing: '0.5px', color: '#F1E9DA' }}>{dailyWord.word}</div>
+            <div className="word-of-the-day-lang" style={{ border: '1px solid rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(4px)' }}>{(dailyWord as any).ultimateOriginLanguage || dailyWord.originLanguage}</div>
           </div>
         </div>
       )}

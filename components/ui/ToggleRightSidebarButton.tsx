@@ -14,7 +14,7 @@ const ToggleRightSidebarButton: React.FC<ToggleRightSidebarButtonProps> = ({ isV
     zIndex: 1002,
     width: '30px',
     height: '60px',
-    backgroundColor: 'rgb(35, 67, 74)',
+    backgroundColor: 'var(--detailspanel-header-bg)',
     color: 'white',
     border: 'none',
     borderRadius: '8px 0 0 8px',

@@ -151,7 +151,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   if (!word) return null;
 
   // --- STYLES ---
-  const detailPanelBodyBg = '#212934';
+  const detailPanelBodyBg = 'var(--detailspanel-bg)';
 
   let transformValue = 'translateX(100%)';
   if (isOpen) { transformValue = 'translateX(0)'; }
@@ -194,11 +194,11 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: 1, transition: 'opacity 0.2s' };
   const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: detailPanelBodyBg, flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
 
-  const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-secondary)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
+  const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.25)', color: '#E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
   const filterBadgeBaseStyle: React.CSSProperties = {
     ...badgeStyle,
-    border: '1px solid rgba(255, 243, 224, 0.15)',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    border: '1px solid rgba(255, 243, 224, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     boxShadow: 'none',
     transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
     minHeight: '34px'
@@ -207,12 +207,23 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value);
     return {
       ...filterBadgeBaseStyle,
-      border: isActive ? '1px solid #f0b77a' : '1px solid rgba(255, 243, 224, 0.16)',
-      backgroundColor: isActive ? 'rgba(240, 183, 122, 0.14)' : 'rgba(255, 255, 255, 0.04)',
+      border: isActive ? '1px solid #f0b77a' : '1px solid rgba(255, 243, 224, 0.35)',
+      backgroundColor: isActive ? 'rgba(240, 183, 122, 0.14)' : 'rgba(255, 255, 255, 0.08)',
       boxShadow: isActive ? '0 0 0 1px rgba(240, 183, 122, 0.15), 0 0 10px rgba(240, 183, 122, 0.25)' : 'none',
-      color: isActive ? '#fff3e0' : 'var(--sidebar-text-secondary)'
+      color: isActive ? '#fff3e0' : '#E2E8F0'
     };
   };
+
+  const getGlowStyle = (text: string): React.CSSProperties => {
+    if (text === 'Türkiye Türkçesi' || text === 'Eski Türkçe') {
+      return {
+        color: '#FF8C61',
+        textShadow: '0 0 5px rgba(255, 140, 97, 0.4)'
+      };
+    }
+    return { color: 'var(--orange-accent)' };
+  };
+
   const labelStyle: React.CSSProperties = { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--sidebar-text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'block' };
   const textStyle: React.CSSProperties = { fontSize: '0.92rem', lineHeight: '1.55', margin: 0 };
   const primaryButtonStyle: React.CSSProperties = { textDecoration: 'none', fontSize: '0.85rem', padding: '8px 16px', borderRadius: '6px', border: 'none', color: 'white', backgroundColor: 'var(--detailspanel-header-bg)', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', flex: '0 0 auto', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' };
@@ -298,7 +309,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   <p style={textStyle}><span style={{ opacity: 0.6, fontStyle: 'italic' }}>Yükleniyor...</span></p>
                 ) : (
                   liveData.meanings?.map((m, idx) => (
-                    <div key={idx} style={{ backgroundColor: '#0e1923', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div key={idx} style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {liveData.meanings.length > 1 && <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--sidebar-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Anlam {idx + 1}</span>}
                       {m.type && (
                         <span
@@ -308,7 +319,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                             fontWeight: 700,
                             fontSize: '0.72rem',
                             backgroundColor: 'rgba(255,255,255,0.1)',
-                            color: '#D17A5D',
+                            color: 'var(--orange-accent)',
                             padding: '2px 6px',
                             borderRadius: '4px',
                             whiteSpace: 'nowrap',
@@ -337,17 +348,17 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
             <div>
               <div style={labelStyle}>ETİMOLOJİK VERİLER</div>
 
-              <div style={{ backgroundColor: '#1b353b', borderRadius: '12px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ backgroundColor: 'var(--etymology-section-bg)', borderRadius: '12px', padding: '16px', marginBottom: '16px', border: '1px solid var(--sidebar-border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Köken Dil:</span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#D17A5D' }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700, ...getGlowStyle((word as any).ultimateOriginLanguage || word.originLanguage) }}>{(word as any).ultimateOriginLanguage || word.originLanguage}</span>
                 </div>
                 {((word as any).immediateSourceLanguage && (word as any).immediateSourceLanguage !== 'Unknown' && (word as any).immediateSourceLanguage !== ((word as any).ultimateOriginLanguage || word.originLanguage)) && (
                   <>
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Geçiş Dili:</span>
-                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#D17A5D' }}>{(word as any).immediateSourceLanguage}</span>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700, ...getGlowStyle((word as any).immediateSourceLanguage) }}>{(word as any).immediateSourceLanguage}</span>
                     </div>
                   </>
                 )}
@@ -357,7 +368,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Tartışmalı:</span>
-                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: String(word.isControversial).toLowerCase() === 'true' ? '#f59e0b' : 'inherit' }}>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: String(word.isControversial).toLowerCase() === 'true' ? 'var(--controversial-text)' : 'inherit' }}>
                         {String(word.isControversial).toLowerCase() === 'true' ? 'Evet' : 'Hayır'}
                       </span>
                     </div>
@@ -390,7 +401,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   <>
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <span style={{ fontSize: '1rem', color: '#FFF3E0', lineHeight: '1.5', fontWeight: 700, opacity: 0.85 }}>{word.etymology_text}</span>
+                      <span style={{ fontSize: '1rem', color: 'var(--etymology-text)', lineHeight: '1.5', fontWeight: 700, opacity: 0.85 }}>{word.etymology_text}</span>
                     </div>
                   </>
                 )}
