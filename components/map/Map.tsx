@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } fr
 import L, { LatLngBoundsExpression } from 'leaflet';
 import { WordOnMap } from '../../types/types';
 import { useTheme } from '../../context/ThemeContext';
+import { MAP_CONFIG } from '../../lib/constants';
 
 const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
   useMapEvents({ click: () => onClick() });
@@ -44,12 +45,11 @@ const createWordIcon = (wordText: string, isSelected: boolean) => {
   return L.divIcon({
     className: 'word-marker-container',
     html: `<div class="modern-marker ${activeClass}">${wordText}</div>`,
-    iconSize: null as any,
     iconAnchor: [0, 0],
   });
 };
 
-const WordMarker = React.memo(({ word, isSelected, onClick }: { word: WordOnMap, isSelected: boolean, onClick: (e: any) => void }) => {
+const WordMarker = React.memo(({ word, isSelected, onClick }: { word: WordOnMap, isSelected: boolean, onClick: (e: L.LeafletMouseEvent) => void }) => {
   const icon = useMemo(() => createWordIcon(word.word, isSelected), [word.word, isSelected]);
 
   return (
@@ -86,8 +86,8 @@ const Map: React.FC<MapProps> = ({
 }) => {
   const { theme } = useTheme();
   const mapBounds: LatLngBoundsExpression = [[-40, -80], [75, 170]];
-  const lightMapUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-  const darkMapUrl = `https://{s}.tile.jawg.io/cff409a6-f8fe-4c7b-a746-46097db4ee20/{z}/{x}/{y}{r}.png?access-token=${process.env.NEXT_PUBLIC_JAWG_TOKEN}`;
+  const lightMapUrl = MAP_CONFIG.TILES.LIGHT;
+  const darkMapUrl = MAP_CONFIG.TILES.DARK(process.env.NEXT_PUBLIC_JAWG_TOKEN || '');
 
   return (
     <MapContainer

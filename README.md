@@ -74,6 +74,9 @@ yarn install
 Create a `.env.local` file in the root directory and populate it with your own API keys:
 
 ```env
+# Project Configuration
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+
 # Supabase Connection
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key

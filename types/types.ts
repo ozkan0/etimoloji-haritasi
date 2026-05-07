@@ -10,10 +10,22 @@ export interface Word {
   date?: string | number;
   oldestHistory?: {
     dateSortable?: number;
-    source?: any;
-    date?: string;
-    excerpt?: string;
-    quote?: string;
+    source?: {
+      book?: string | null;
+      name?: string | null;
+      datePublished?: string | null;
+      date?: string | number | null;
+      isLinguistic?: boolean;
+      isQuote?: boolean;
+    };
+    date?: string | null;
+    excerpt?: string | null;
+    quote?: string | null;
+    language?: {
+      name: string;
+      description?: string | null;
+      description2?: string | null;
+    } | null;
   };
   formula?: string;
   originSourceType?: string;

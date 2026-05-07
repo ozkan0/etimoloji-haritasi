@@ -12,7 +12,11 @@ export default async function handler(
   const { word } = req.query;
 
   if (!word || typeof word !== 'string') {
-    return res.status(400).json({ error: 'Word parameter is required' });
+    return res.status(400).json({ error: 'Word parameter is required and must be a string.' });
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Internal server error. Missing GEMINI_API_KEY configuration.' });
   }
 
   const normalizedWord = normalizeTurkish(word);
@@ -55,8 +59,8 @@ export default async function handler(
 
     res.status(200).json({ details: text });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Gemini API Error:', error);
-    res.status(500).json({ error: 'AI analizi yapılamadı.' });
+    return res.status(500).json({ error: `Internal server error: ${error.message || 'AI analizi yapılamadı.'}` });
   }
 }

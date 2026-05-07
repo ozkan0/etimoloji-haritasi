@@ -3,45 +3,91 @@ import { normalizePeriodLabel } from '../lib/constants';
 import { Word } from '../types/types';
 import { normalizeTurkish } from '../utils/normalizeTurkish';
 
-function getCalculatedPeriod(dateValue: any): string {
+interface WordsDbRow {
+    id: number;
+    _id?: string;
+    word: string;
+    originLanguage: string;
+    ultimateOriginLanguage?: string | null;
+    immediateLanguage?: string | null;
+    immediateSourceLanguage?: string | null;
+    etymology?: string | null;
+    etymology_text?: string | null;
+    period?: string | null;
+    oldestDate?: string | number | null;
+    oldest_dateSortable?: number | null;
+    date?: string | number | null;
+    oldest_date?: string | null;
+    oldestSource?: string | null;
+    source_book?: string | null;
+    source_name?: string | null;
+    source_datePublished?: string | null;
+    source_date?: string | null;
+    source_isLinguistic?: string | boolean | null;
+    source_isQuote?: string | boolean | null;
+    oldest_excerpt?: string | null;
+    oldest_quote?: string | null;
+    history_language_name?: string | null;
+    history_language_description?: string | null;
+    history_language_description2?: string | null;
+    oldestHistory?: {
+        dateSortable?: number;
+        source?: {
+            book?: string | null;
+            name?: string | null;
+            datePublished?: string | null;
+            date?: string | number | null;
+            isLinguistic?: boolean;
+            isQuote?: boolean;
+        };
+        date?: string | null;
+        excerpt?: string | null;
+        quote?: string | null;
+        language?: {
+            name: string;
+            description?: string | null;
+            description2?: string | null;
+        } | null;
+    };
+    source?: string | null;
+    formula?: string | null;
+    originSourceType?: string | null;
+    isControversial?: boolean | string | null;
+    extraInfo?: string | null;
+}
+
+function getCalculatedPeriod(dateValue: number | undefined): string {
     if (typeof dateValue === 'number') {
         if (dateValue < 1300) return 'Osmanlı Öncesi';
         if (dateValue <= 1928) return 'Osmanlı';
-        return 'Cumhuriyet';
     }
     return 'Cumhuriyet';
 }
 
-function processWordRecord(w: any): Word {
-    let rawDateSortable = w.oldestDate || w.oldest_dateSortable;
+function processWordRecord(w: WordsDbRow): Word {
+    let rawDateSortable: number | undefined = (w.oldest_dateSortable !== null && w.oldest_dateSortable !== undefined) 
+        ? w.oldest_dateSortable 
+        : (typeof w.oldestDate === 'number' ? w.oldestDate : undefined);
+    
     if (rawDateSortable === undefined && w.oldestHistory?.dateSortable) {
         rawDateSortable = w.oldestHistory.dateSortable;
     }
 
-    if (typeof rawDateSortable === 'string') {
-        const match = rawDateSortable.match(/\d{3,4}/);
-        if (match) {
-            rawDateSortable = parseInt(match[0], 10);
-        } else {
-            rawDateSortable = parseInt(rawDateSortable, 10);
-        }
-    }
+    const parseYear = (val: string | number | undefined | null): number | undefined => {
+        if (val === undefined || val === null) return undefined;
+        if (typeof val === 'number') return val;
+        const match = val.match(/\d{3,4}/);
+        return match ? parseInt(match[0], 10) : undefined;
+    };
 
-    if (rawDateSortable === undefined || isNaN(rawDateSortable)) {
-        if (w.date) {
-            if (typeof w.date === 'string') {
-                const match = w.date.match(/\d{3,4}/);
-                if (match) rawDateSortable = parseInt(match[0], 10);
-            } else if (typeof w.date === 'number') {
-                rawDateSortable = w.date;
-            }
-        }
+    if (rawDateSortable === undefined) {
+        rawDateSortable = parseYear(w.oldestDate) ?? parseYear(w.date);
     }
 
     const calculatedPeriod = normalizePeriodLabel(w.period || getCalculatedPeriod(rawDateSortable));
 
     let oldestHistoryObj = w.oldestHistory;
-    if (!oldestHistoryObj && (w.oldest_dateSortable !== undefined || w.oldestDate !== undefined)) {
+    if (!oldestHistoryObj && (w.oldest_dateSortable != null || w.oldestDate != null)) {
         oldestHistoryObj = {
             dateSortable: rawDateSortable,
             source: {
@@ -64,20 +110,20 @@ function processWordRecord(w: any): Word {
     }
 
     return {
-        id: w.id || w._id,
+        id: w.id || w._id || 0,
         word: w.word,
         originLanguage: w.originLanguage || w.ultimateOriginLanguage || 'Bilinmiyor',
-        immediateSourceLanguage: w.immediateLanguage || w.immediateSourceLanguage,
-        ultimateOriginLanguage: w.ultimateOriginLanguage,
-        etymology_text: w.etymology || w.etymology_text,
+        immediateSourceLanguage: w.immediateLanguage || w.immediateSourceLanguage || undefined,
+        ultimateOriginLanguage: w.ultimateOriginLanguage || undefined,
+        etymology_text: w.etymology || w.etymology_text || undefined,
         period: calculatedPeriod,
         source: w.oldestSource || w.source_book || w.oldestHistory?.source?.book || w.source || 'TDK',
-        date: rawDateSortable || w.oldestDate || w.oldest_date || w.date,
-        oldestHistory: oldestHistoryObj,
-        formula: w.formula,
-        originSourceType: w.originSourceType,
-        isControversial: w.isControversial,
-        extraInfo: w.extraInfo
+        date: rawDateSortable || w.oldestDate || w.oldest_date || w.date || undefined,
+        oldestHistory: oldestHistoryObj || undefined,
+        formula: w.formula || undefined,
+        originSourceType: w.originSourceType || undefined,
+        isControversial: w.isControversial ?? undefined,
+        extraInfo: w.extraInfo || undefined
     };
 }
 
@@ -91,82 +137,77 @@ export const wordService = {
             .range(randomOffset, randomOffset + limit - 1);
 
         if (error) {
-            console.error('Error fetching words:', error);
+            console.error(`Supabase error in fetchSidebarWords: ${error.message}`);
             return [];
         }
 
         if (rawData) {
             const shuffled = rawData.sort(() => 0.5 - Math.random()).slice(0, limit);
-            return shuffled.map(processWordRecord);
+            return shuffled.map((w: any) => processWordRecord(w as WordsDbRow));
         }
         return [];
     },
 
     searchWords: async (query: string): Promise<Word[]> => {
-        if (!query || query.trim() === '') return [];
+        const trimmedQuery = query?.trim();
+        if (!trimmedQuery) return [];
 
-        const raw = query.trim();
-        const normalized = normalizeTurkish(raw);
+        const normalized = normalizeTurkish(trimmedQuery);
         if (!normalized) return [];
 
         const { data: rawData, error } = await supabase
             .rpc('search_words_ranked', {
-                raw_query: raw,
+                raw_query: trimmedQuery,
                 search_query: normalized
             })
             .limit(50);
 
         if (error) {
-            console.error('Error searching words:', error);
+            console.error(`Supabase error in searchWords: ${error.message}`);
             return [];
         }
 
         if (rawData) {
-            return rawData.map(processWordRecord);
+            return rawData.map((w: any) => processWordRecord(w as WordsDbRow));
         }
         return [];
     },
 
     fetchWordByExact: async (word: string): Promise<Word | null> => {
-        if (!word || word.trim() === '') return null;
+        const trimmedWord = word?.trim();
+        if (!trimmedWord) return null;
 
         const { data: rawData, error } = await supabase
             .from('words_db')
             .select('*')
-            .ilike('word', word.trim())
+            .ilike('word', trimmedWord)
             .limit(1)
             .maybeSingle();
 
         if (error) {
-            console.error('Error fetching exact word:', error);
+            console.error(`Supabase error in fetchWordByExact: ${error.message}`);
             return null;
         }
 
-        return rawData ? processWordRecord(rawData) : null;
+        return rawData ? processWordRecord(rawData as WordsDbRow) : null;
     },
 
     fetchFilteredWords: async (language: string, period: string, languageMode: 'origin' | 'immediate', limit: number = 300): Promise<Word[]> => {
         let query = supabase.from('words_db').select('*');
 
         if (language !== 'Tüm Diller') {
-            if (languageMode === 'immediate') {
-                query = query.eq('immediateLanguage', language);
-            } else {
-                query = query.eq('originLanguage', language);
-            }
+            query = query.eq(languageMode === 'immediate' ? 'immediateLanguage' : 'originLanguage', language);
         }
 
-        query = query.limit(limit);
-
-        const { data: rawData, error } = await query;
+        const { data: rawData, error } = await query.limit(limit);
 
         if (error) {
-            console.error('Error fetching filtered words:', error);
+            console.error(`Supabase error in fetchFilteredWords: ${error.message}`);
             return [];
         }
 
         if (rawData) {
-            let processed = rawData.map(processWordRecord);
+            let processed = rawData.map((w: any) => processWordRecord(w as WordsDbRow));
             if (period !== 'Tüm Dönemler') {
                 const normalizedPeriod = normalizePeriodLabel(period);
                 processed = processed.filter(w => normalizePeriodLabel(w.period) === normalizedPeriod);
@@ -188,20 +229,20 @@ export const wordService = {
             .select('*')
             .range(offset, offset)
             .limit(1)
-            .single();
+            .maybeSingle();
 
-        if (error || !rawData) {
-            console.error('Error fetching daily word:', error);
+        if (error) {
+            console.error(`Supabase error in fetchDailyWord: ${error.message}`);
             return null;
         }
 
-        return processWordRecord(rawData);
+        return rawData ? processWordRecord(rawData as WordsDbRow) : null;
     },
 
     fetchNewsItems: async (): Promise<{ id: number, text: string }[]> => {
-        const { data: newsData, error: newsError } = await supabase.from('news').select('id, text');
-        if (newsError) {
-            console.error('News fetch error:', newsError);
+        const { data: newsData, error } = await supabase.from('news').select('id, text');
+        if (error) {
+            console.error(`Supabase error in fetchNewsItems: ${error.message}`);
             return [];
         }
         return newsData || [];

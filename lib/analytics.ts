@@ -1,6 +1,6 @@
 const recentEventTimes = new Map<string, number>();
 
-export const trackEvent = (eventType: string, eventData: any = {}) => {
+export const trackEvent = (eventType: string, eventData: Record<string, unknown> = {}) => {
   if (typeof window === 'undefined') return;
   if (process.env.NODE_ENV !== 'production') return;
 

@@ -25,43 +25,7 @@ import { Word, Language, WordOnMap } from '../types/types';
 import { getRandomCoordinatesInBoundingBox } from '../utils/geoUtils';
 import { useEtymologyData } from '../hooks/useEtymologyData';
 import { wordService } from '../services/wordService';
-
-const mapOriginLanguageToTurkish = (lang: string): string => {
-  const codeMap: Record<string, string> = {
-    // Turkic / Central Asian
-    'Eski Türkçe': 'Eski Türkçe',
-    'Karahanlıca': 'Eski Türkçe',
-    'Uygurca': 'Eski Türkçe',
-    'Yakutça': 'Eski Türkçe',
-    'Çuvaşça': 'Eski Türkçe',
-
-    'Orta Türkçe': 'Orta Türkçe',
-    'Çağatayca': 'Orta Türkçe',
-    'Kıpçakça': 'Orta Türkçe',
-    'Harezmce': 'Orta Türkçe',
-    'Kazakça': 'Orta Türkçe',
-    'Özbekçe': 'Orta Türkçe',
-    'Türkmence': 'Orta Türkçe',
-    'Kırgızca': 'Orta Türkçe',
-    'Tatarca': 'Orta Türkçe',
-
-    'Türkiye Türkçesi': 'Türkçe',
-    'Yeni Türkçe': 'Türkçe',
-    'Azerice': 'Türkçe',
-    'Gagauzca': 'Türkçe',
-
-    // Meso & Levant
-    'Akatça': 'Süryanice',
-    'Sümerce': 'Süryanice',
-    'Aramice': 'Süryanice',
-
-    // Indo-European overrides
-    'Yeni Latince': 'Latince',
-    'Orta Latince': 'Latince',
-    'Geç Latince': 'Latince'
-  };
-  return codeMap[lang.trim()] || lang.trim();
-};
+import { mapOriginLanguageToTurkish } from '../config/languageMapping';
 
 const MapComponent = dynamic(() => import('../components/map/Map'), {
   ssr: false,
@@ -120,8 +84,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     const groupedWords: Record<string, Word[]> = {};
     wordsToMap.forEach(word => {
       const rawLang = currentLanguageMode === 'immediate'
-        ? ((word as any).immediateSourceLanguage || (word as any).immediateLanguage || 'Bilinmiyor')
-        : ((word as any).ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
+        ? (word.immediateSourceLanguage || 'Bilinmiyor')
+        : (word.ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
         
       const langKey = String(rawLang).trim();
       if (!groupedWords[langKey]) groupedWords[langKey] = [];
@@ -137,8 +101,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
     return selectedWords.map((word: Word) => {
       const rawLang = currentLanguageMode === 'immediate'
-        ? ((word as any).immediateSourceLanguage || (word as any).immediateLanguage || 'Bilinmiyor')
-        : ((word as any).ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
+        ? (word.immediateSourceLanguage || 'Bilinmiyor')
+        : (word.ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
         
       const dbLang = mapOriginLanguageToTurkish(String(rawLang));
       const languageData = allLanguages.find((lang: Language) =>
@@ -169,8 +133,8 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       let matchesLanguage = true;
       if (currentActiveLang !== 'Tüm Diller') {
         const langStr = currentLanguageMode === 'immediate'
-          ? ((word as any).immediateSourceLanguage || (word as any).immediateLanguage || 'Bilinmiyor')
-          : ((word as any).ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
+          ? (word.immediateSourceLanguage || 'Bilinmiyor')
+          : (word.ultimateOriginLanguage || word.originLanguage || 'Bilinmiyor');
         matchesLanguage = langStr.trim() === currentActiveLang;
       }
       
