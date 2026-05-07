@@ -10,12 +10,11 @@ export default async function handler(
   const { word } = req.query;
 
   if (!word || typeof word !== 'string') {
-    return res.status(400).json({ error: 'Word parameter is required' });
+    return res.status(400).json({ error: 'Word parameter is required and must be a string.' });
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    console.error('Missing GEMINI_API_KEY in environment variables.');
-    return res.status(500).json({ error: 'Server configuration error' });
+    return res.status(500).json({ error: 'Internal server error. Missing GEMINI_API_KEY configuration.' });
   }
 
   try {
@@ -36,14 +35,11 @@ export default async function handler(
     `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    
-    const originLanguage = response.text().trim();
+    const originLanguage = result.response.text().trim();
 
-    res.status(200).json({ origin: originLanguage });
-
-  } catch (error) {
+    return res.status(200).json({ origin: originLanguage });
+  } catch (error: any) {
     console.error('Gemini API Error:', error);
-    res.status(500).json({ error: 'AI servisine ulaşılamadı.' });
+    return res.status(500).json({ error: `Internal server error: ${error.message || 'AI servisine ulaşılamadı.'}` });
   }
 }

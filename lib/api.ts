@@ -37,35 +37,34 @@ export const getWordMeaning = async (word: string): Promise<TdkResponse> => {
   }
 
   const requestPromise = (async () => {
-    const response = await fetch(`/api/getTdkMeaning?word=${encodeURIComponent(word)}`);
+    try {
+      const response = await fetch(`/api/getTdkMeaning?word=${encodeURIComponent(word)}`);
 
-    if (response.status === 404) {
-      const data = await response.json().catch(() => ({
-        meanings: [{ text: 'TDK sözlüğünde kayıt bulunamadı.' }],
-        example: null,
-      }));
+      if (response.status === 404) {
+        const data = await response.json().catch(() => ({
+          meanings: [{ text: 'TDK sözlüğünde kayıt bulunamadı.' }],
+          example: null,
+        }));
 
-      const notFoundResponse: TdkResponse = {
-        meanings: Array.isArray(data.meanings) ? data.meanings : [{ text: 'TDK sözlüğünde kayıt bulunamadı.' }],
-        example: data.example ?? null,
-      };
+        const notFoundResponse: TdkResponse = {
+          meanings: Array.isArray(data.meanings) ? data.meanings : [{ text: 'TDK sözlüğünde kayıt bulunamadı.' }],
+          example: data.example ?? null,
+        };
 
-      meaningCache.set(cacheKey, notFoundResponse);
-      return notFoundResponse;
+        meaningCache.set(cacheKey, notFoundResponse);
+        return notFoundResponse;
+      }
+
+      const data = await handleResponse<TdkResponse>(response);
+      meaningCache.set(cacheKey, data);
+      return data;
+    } finally {
+      pendingMeaningRequests.delete(cacheKey);
     }
-
-    const data = await handleResponse<TdkResponse>(response);
-    meaningCache.set(cacheKey, data);
-    return data;
   })();
 
   pendingMeaningRequests.set(cacheKey, requestPromise);
-
-  try {
-    return await requestPromise;
-  } finally {
-    pendingMeaningRequests.delete(cacheKey);
-  }
+  return requestPromise;
 };
 
 export const getAiEtymology = async (word: string): Promise<AiResponse> => {

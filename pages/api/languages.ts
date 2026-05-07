@@ -1,9 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../../lib/supabaseClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,7 +7,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    let allData: any[] = [];
+    interface LanguageRow {
+      originLanguage: string | null;
+      immediateLanguage: string | null;
+    }
+    let allData: LanguageRow[] = [];
     let hasMore = true;
     let from = 0;
     
@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (error) throw error;
       
       if (data && data.length > 0) {
-        allData = allData.concat(data);
+        allData = allData.concat(data as LanguageRow[]);
         from += 1000;
         if (data.length < 1000) hasMore = false;
       } else {
@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const originSet = new Set<string>();
     const immediateSet = new Set<string>();
 
-    allData.forEach((row: any) => {
+    allData.forEach((row) => {
       const origin = row.originLanguage;
       const immediate = row.immediateLanguage;
 
@@ -49,8 +49,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       origins: Array.from(originSet).sort((a, b) => a.localeCompare(b, 'tr')),
       immediates: Array.from(immediateSet).sort((a, b) => a.localeCompare(b, 'tr')),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching distinct languages:', error);
-    return res.status(500).json({ error: error.message });
+    const message = error instanceof Error ? error.message : 'Error fetching languages';
+    return res.status(500).json({ error: `Internal server error: ${message}` });
   }
 }

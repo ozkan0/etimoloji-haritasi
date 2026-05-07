@@ -26,9 +26,9 @@ export const useEtymologyData = () => {
         const news = await wordService.fetchNewsItems();
         setNewsItems(news);
 
-      } catch (err: any) {
+      } catch (err) {
         console.error('Data fetch error:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Failed to fetch etymology data from the server.');
       } finally {
         setIsLoading(false);
       }

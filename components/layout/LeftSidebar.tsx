@@ -178,11 +178,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
     fetch('/api/languages')
       .then(res => res.json())
       .then(data => {
+        if (data.error) {
+          console.error(`Language fetch error: ${data.error}`);
+          return;
+        }
         if (data.origins && data.immediates) {
            setCompleteLangs(data);
         }
       })
-      .catch(console.error);
+      .catch(err => console.error(`Language API connection error: ${err.message}`));
   }, []);
 
   const availableLanguages = useMemo(() => {
@@ -198,10 +202,10 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
     
     if (languageMode === 'immediate') {
       dynamicLangs = allWords
-        .map(w => (w as any).immediateSourceLanguage || (w as any).immediateLanguage || 'Bilinmiyor')
-        .filter(lang => lang && lang !== 'Bilinmiyor');
+        .map(w => w.immediateSourceLanguage || 'Bilinmiyor')
+        .filter(lang => lang && lang !== 'Bilinmiyor') as string[];
     } else {
-      dynamicLangs = allWords.map(w => (w as any).ultimateOriginLanguage || w.originLanguage);
+      dynamicLangs = allWords.map(w => w.ultimateOriginLanguage || w.originLanguage);
     }
     
     const uniqueLangs = [...new Set([...coreLanguages, ...dynamicLangs])];

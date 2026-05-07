@@ -9,7 +9,7 @@ export default async function handler(
   const { word } = req.query;
 
   if (!word || typeof word !== 'string') {
-    return res.status(400).json({ error: 'Kelime parametresi eksik.' });
+    return res.status(400).json({ meanings: [], error: 'Word parameter is missing or invalid.' });
   }
 
   const normalizedWord = normalizeTurkish(word);
@@ -19,7 +19,7 @@ export default async function handler(
       .from('word_cache')
       .select('tdk_meaning, tdk_example')
       .eq('word', normalizedWord)
-      .single();
+      .maybeSingle();
 
     if (cached && cached.tdk_meaning) {
       let meanings = [];
@@ -57,14 +57,19 @@ export default async function handler(
     if (Array.isArray(data) && data.length > 0) {
       const firstEntry = data[0];
 
-      let meanings: any[] = [];
+      interface TdkAnlam {
+        type: string;
+        text: string;
+      }
+      
+      let meanings: TdkAnlam[] = [];
       let example = null;
 
       if (firstEntry.anlamlarListe && firstEntry.anlamlarListe.length > 0) {
         for (const anlam of firstEntry.anlamlarListe) {
           let typeStr = '';
           if (anlam.ozelliklerListe && anlam.ozelliklerListe.length > 0) {
-            typeStr = anlam.ozelliklerListe.map((oz: any) => oz.tam_adi).join(', ');
+            typeStr = (anlam.ozelliklerListe as { tam_adi: string }[]).map((oz) => oz.tam_adi).join(', ');
           }
           meanings.push({ type: typeStr, text: anlam.anlam });
 
@@ -95,8 +100,8 @@ export default async function handler(
 
     return res.status(404).json({ meanings: [{ text: 'TDK sözlüğünde kayıt bulunamadı.' }], example: null });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('TDK API Proxy Hatası:', error);
-    return res.status(500).json({ meanings: [{ text: 'Bağlantı hatası.' }], example: null });
+    return res.status(500).json({ meanings: [], error: `Internal server error: ${error.message || 'Bağlantı hatası.'}` });
   }
 }

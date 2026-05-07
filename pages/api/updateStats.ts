@@ -1,13 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabaseClient';
 
-function getCalculatedPeriod(dateValue: any): string {
+function getCalculatedPeriod(dateValue: number | undefined | null): string {
     if (typeof dateValue === 'number') {
         if (dateValue < 1300) return 'Osmanlı Öncesi';
         if (dateValue <= 1928) return 'Osmanlı';
-        return 'Cumhuriyet';
     }
     return 'Cumhuriyet';
+}
+
+interface WordStatRow {
+    id: number;
+    originLanguage: string;
+    ultimateOriginLanguage?: string;
+    immediateLanguage?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -16,14 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        let allData: any[] = [];
+        let allData: WordStatRow[] = [];
         let hasMore = true;
         let lastId = 0;
         
         while (hasMore) {
             const { data, error } = await supabase
                 .from('words_db')
-                .select('*')
+                .select('id, originLanguage, ultimateOriginLanguage, immediateLanguage')
                 .order('id', { ascending: true })
                 .gt('id', lastId)
                 .limit(1000);
@@ -33,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             if (data && data.length > 0) {
-                allData = [...allData, ...data];
+                allData = [...allData, ...(data as WordStatRow[])];
                 lastId = data[data.length - 1].id;
             } else {
                 hasMore = false;
@@ -43,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const lCounts: Record<string, number> = {};
         const iCounts: Record<string, number> = {};
 
-        allData.forEach((row: any) => {
+        allData.forEach((row) => {
             const lang = row.ultimateOriginLanguage || row.originLanguage || 'Bilinmiyor';
             lCounts[lang] = (lCounts[lang] || 0) + 1;
 
@@ -94,8 +100,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             message: `Stats cached successfully! Analyzed ${allData.length} records.`,
             stats: { langs: sortedLangs.length, immediateLangs: sortedImmediateLangs.length }
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error computing stats:', error);
-        res.status(500).json({ success: false, error: error.message });
+        const message = error instanceof Error ? error.message : 'Error computing stats';
+        return res.status(500).json({ success: false, error: `Internal server error: ${message}` });
     }
 }

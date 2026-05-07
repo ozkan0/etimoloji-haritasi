@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabaseClient';
 import crypto from 'crypto';
 
 export const config = {
@@ -8,11 +8,7 @@ export const config = {
   },
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function readJsonBody(req: NextApiRequest): Promise<any | null> {
+async function readJsonBody(req: NextApiRequest): Promise<Record<string, any> | null> {
   const chunks: Uint8Array[] = [];
   for await (const chunk of req) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
@@ -40,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const payload = await readJsonBody(req);
-  if (!payload || typeof payload !== 'object') {
+  if (!payload) {
     return res.status(204).end();
   }
 
@@ -76,6 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('Analytics Error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: `Internal server error: ${error.message || 'Error tracking event'}` });
   }
 }
