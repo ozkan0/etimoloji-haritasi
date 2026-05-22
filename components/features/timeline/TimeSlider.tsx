@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { APP_CONFIG } from '../../../lib/constants';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { APP_CONFIG, UI_CONFIG } from '../../../lib/constants';
 
 interface TimeSliderProps {
   year: number;
@@ -9,15 +9,38 @@ interface TimeSliderProps {
   disabled?: boolean;
 }
 
-const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isRightOpen, disabled = true }) => {
+const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isRightOpen, disabled = false }) => {
   const minYear = APP_CONFIG.MIN_YEAR;
   const maxYear = APP_CONFIG.MAX_YEAR;
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isMaintenanceDisabled = false;
 
   const getPercentage = () => {
     return ((year - minYear) / (maxYear - minYear)) * 100;
   };
+
+  useEffect(() => {
+    if (isPlaying) {
+      intervalRef.current = setInterval(() => {
+        if (year >= maxYear) {
+          setIsPlaying(false);
+        } else {
+          onChange(year + 1);
+        }
+      }, 50); // Speed of animation
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isPlaying, maxYear, onChange, year]);
+
+  const togglePlay = () => setIsPlaying(!isPlaying);
 
   const renderTicks = useMemo(() => {
     const ticks = [];
@@ -48,14 +71,14 @@ const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isR
       );
     }
     return ticks;
-  }, []);
+  }, [minYear, maxYear]);
 
   // --- STYLES ---
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
     bottom: '0',
-    left: isLeftOpen ? '370px' : '0',
-    right: isRightOpen ? '400px' : '0',
+    left: isLeftOpen ? `${UI_CONFIG.SIDEBAR_WIDTH + 20}px` : '0',
+    right: isRightOpen ? `${UI_CONFIG.DETAIL_PANEL_WIDTH + 10}px` : '0',
     height: '70px',
     display: 'flex',
     alignItems: 'flex-end',
@@ -63,12 +86,42 @@ const TimeSlider: React.FC<TimeSliderProps> = ({ year, onChange, isLeftOpen, isR
     padding: '0 40px 10px 40px',
     zIndex: 1000,
     background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
-    pointerEvents: disabled ? 'none' : 'none',
+    pointerEvents: 'auto',
     transition: 'left 0.3s cubic-bezier(0.25, 1, 0.5, 1), right 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease'
   };
 
   return (
     <div style={containerStyle}>
+      {/* Play Button */}
+      <button
+        onClick={togglePlay}
+        disabled={disabled || isMaintenanceDisabled}
+        style={{
+          position: 'absolute',
+          left: '10px',
+          bottom: '15px',
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.3)',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          color: 'white',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.4)'; }}
+      >
+        {isPlaying ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '2px' }}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        )}
+      </button>
 
       <div style={{
         position: 'absolute', top: '-15px', color: '#ffb74d', fontSize: '0.85rem', fontWeight: 600,

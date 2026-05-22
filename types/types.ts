@@ -18,7 +18,7 @@ export interface Word {
       isLinguistic?: boolean;
       isQuote?: boolean;
     };
-    date?: string | null;
+    date?: string | number | null;
     excerpt?: string | null;
     quote?: string | null;
     language?: {

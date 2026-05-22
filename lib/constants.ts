@@ -41,6 +41,12 @@ export const PERIOD_ALIASES: Record<string, string> = {
   [PERIOD_NAMES.CUMHURIYET]: PERIOD_NAMES.CUMHURIYET,
 };
 
+export const UI_CONFIG = {
+  SIDEBAR_WIDTH: 350,
+  DETAIL_PANEL_WIDTH: 390,
+  MOBILE_BREAKPOINT: 768,
+};
+
 export const normalizePeriodLabel = (value: string): string => {
   const raw = String(value || '').trim();
   return PERIOD_ALIASES[raw] || raw;
