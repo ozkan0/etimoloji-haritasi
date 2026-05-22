@@ -12,6 +12,7 @@ interface SettingsMenuProps {
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick, limitPerLang, onLimitChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [mapEffectsEnabled, setMapEffectsEnabled] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,12 +26,24 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const stored = localStorage.getItem('mapEffectsEnabled');
+    if (stored !== null) {
+      setMapEffectsEnabled(stored === 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('mapEffectsEnabled', String(mapEffectsEnabled));
+    document.body.setAttribute('data-map-effects', mapEffectsEnabled ? 'on' : 'off');
+  }, [mapEffectsEnabled]);
+
   const toggleMenu = () => {
     setIsOpen(prev => !prev);
   };
 
   return (
-    <div ref={menuRef} style={{ position: 'fixed', top: '1px', right: '16px', transform: 'translateX(-50%)', zIndex: 1200 }}>
+    <div ref={menuRef} style={{ position: 'fixed', top: '1px', right: '10px', zIndex: 1200 }}>
       <button
         onClick={toggleMenu}
         style={{
@@ -138,6 +151,56 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
             }}>
               {limitPerLang}
             </span>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: '12px',
+          }}>
+            <div style={{
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              color: 'var(--sidebar-text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.6px',
+            }}>
+              Harita Efektleri
+            </div>
+            <button
+              role="switch"
+              aria-checked={mapEffectsEnabled}
+              aria-label="Harita efektlerini aç/kapat"
+              onClick={() => setMapEffectsEnabled(prev => !prev)}
+              style={{
+                position: 'relative',
+                width: '40px',
+                height: '22px',
+                flexShrink: 0,
+                borderRadius: '999px',
+                border: '1px solid var(--sidebar-border-color)',
+                backgroundColor: mapEffectsEnabled
+                  ? 'var(--primary-action-emerald)'
+                  : 'var(--sidebar-border-color)',
+                cursor: 'pointer',
+                padding: 0,
+                transition: 'background-color 0.2s ease',
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: '2px',
+                left: '2px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                transform: mapEffectsEnabled ? 'translateX(18px)' : 'translateX(0)',
+                transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }} />
+            </button>
           </div>
         </div>
         

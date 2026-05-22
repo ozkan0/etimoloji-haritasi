@@ -13,6 +13,7 @@ import StatsPanel from '../components/layout/StatsPanel';
 import ToggleSidebarButton from '../components/ui/ToggleSidebarButton';
 import ToggleRightSidebarButton from '../components/ui/ToggleRightSidebarButton';
 import SettingsMenu from '../components/ui/SettingsMenu';
+import RefreshMarkersButton from '../components/ui/RefreshMarkersButton';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import MetaHead from '../components/ui/MetaHead';
 
@@ -40,7 +41,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const router = useRouter();
 
   // --- DATA FETCHING ---
-  const { sidebarWords, mapWords, dailyWord, newsItems, isLoading } = useEtymologyData();
+  const { sidebarWords, mapWords, dailyWord, newsItems, isLoading, isRefreshing, refreshMapWords } = useEtymologyData();
 
   // --- UI STATES ---
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -314,9 +315,10 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       <SettingsMenu 
         onAboutClick={toggleAboutPanel} 
         onStatsClick={() => setIsStatsPanelOpen(true)} 
-        limitPerLang={limitPerLang} 
-        onLimitChange={setLimitPerLang} 
+        limitPerLang={limitPerLang}
+        onLimitChange={setLimitPerLang}
       />
+      <RefreshMarkersButton onClick={refreshMapWords} isRefreshing={isRefreshing} />
 
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />

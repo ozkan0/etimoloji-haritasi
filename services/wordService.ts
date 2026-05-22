@@ -128,24 +128,67 @@ function processWordRecord(w: WordsDbRow): Word {
 }
 
 export const wordService = {
-    fetchSidebarWords: async (limit: number = 20): Promise<Word[]> => {
-        const randomOffset = Math.floor(Math.random() * 14000);
-
-        const { data: rawData, error } = await supabase
+    getWordCount: async (): Promise<number> => {
+        const { count, error } = await supabase
             .from('words_db')
-            .select('*')
-            .range(randomOffset, randomOffset + limit - 1);
+            .select('*', { count: 'exact', head: true });
 
-        if (error) {
-            console.error(`Supabase error in fetchSidebarWords: ${error.message}`);
-            return [];
+        if (error || !count) {
+            console.error(`Supabase error in getWordCount: ${error?.message}`);
+            return 0;
+        }
+        return count;
+    },
+
+    fetchAllWordIds: async (count: number): Promise<number[]> => {
+        const PAGE = 1000;
+        const numPages = Math.ceil(count / PAGE);
+
+        const pages = await Promise.all(
+            [...Array(numPages).keys()].map(async (p) => {
+                const { data, error } = await supabase
+                    .from('words_db')
+                    .select('id')
+                    .order('id', { ascending: true })
+                    .range(p * PAGE, p * PAGE + PAGE - 1);
+
+                if (error) {
+                    console.error(`Supabase error in fetchAllWordIds: ${error.message}`);
+                    return [] as number[];
+                }
+                return (data || []).map((r: any) => r.id as number);
+            })
+        );
+        return pages.flat();
+    },
+
+    fetchWordsByIds: async (ids: number[]): Promise<Word[]> => {
+        if (ids.length === 0) return [];
+
+        const BATCH = 500;
+        const batches: number[][] = [];
+        for (let i = 0; i < ids.length; i += BATCH) {
+            batches.push(ids.slice(i, i + BATCH));
         }
 
-        if (rawData) {
-            const shuffled = rawData.sort(() => 0.5 - Math.random()).slice(0, limit);
-            return shuffled.map((w: any) => processWordRecord(w as WordsDbRow));
-        }
-        return [];
+        const results = await Promise.all(
+            batches.map(async (batch) => {
+                const { data, error } = await supabase
+                    .from('words_db')
+                    .select('*')
+                    .in('id', batch);
+
+                if (error) {
+                    console.error(`Supabase error in fetchWordsByIds: ${error.message}`);
+                    return [];
+                }
+                return data || [];
+            })
+        );
+
+        const flat = results.flat();
+        flat.sort(() => 0.5 - Math.random());
+        return flat.map((w: any) => processWordRecord(w as WordsDbRow));
     },
 
     searchWords: async (query: string): Promise<Word[]> => {
@@ -222,7 +265,17 @@ export const wordService = {
         const seed = today.getDate() + (today.getMonth() + 1) * 100 + today.getFullYear() * 10000;
 
         const pseudoRandom = Math.abs(Math.sin(seed));
-        const offset = Math.floor(pseudoRandom * 14000);
+
+        const { count, error: countError } = await supabase
+            .from('words_db')
+            .select('*', { count: 'exact', head: true });
+
+        if (countError || !count) {
+            console.error(`Supabase error in fetchDailyWord (count): ${countError?.message}`);
+            return null;
+        }
+
+        const offset = Math.floor(pseudoRandom * count);
 
         const { data: rawData, error } = await supabase
             .from('words_db')
