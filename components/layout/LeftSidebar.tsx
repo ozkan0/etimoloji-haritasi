@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Word } from '../../types/types';
 import { trackEvent } from '../../lib/analytics';
-import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES, normalizePeriodLabel } from '../../lib/constants';
+import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES, normalizePeriodLabel, UI_CONFIG } from '../../lib/constants';
 import { wordService } from '../../services/wordService';
 
 interface LeftSidebarProps {
@@ -250,7 +250,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   };
 
   // --- STYLES ---
-  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: '350px', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '0 22px 22px 0', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
+  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: `${UI_CONFIG.SIDEBAR_WIDTH}px`, backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '0 22px 22px 0', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
   const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: 'var(--sidebar-header-bg)', color: 'white' };
 
   const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '14px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255, 243, 224, 0.1)', padding: '4px 10px' };

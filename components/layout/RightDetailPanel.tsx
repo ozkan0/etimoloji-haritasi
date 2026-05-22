@@ -3,6 +3,7 @@ import { Word } from '../../types/types';
 import SubmissionModal from '../ui/SubmissionModal';
 import { trackEvent } from '../../lib/analytics';
 import { getWordMeaning, getAiEtymology, TdkMeaning } from '../../lib/api';
+import { UI_CONFIG } from '../../lib/constants';
 
 interface LiveTdkData {
   meanings: TdkMeaning[];
@@ -162,7 +163,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     right: '0',
     bottom: '0',
     height: 'auto',
-    width: 'min(390px, 100vw)',
+    width: `min(${UI_CONFIG.DETAIL_PANEL_WIDTH}px, 100vw)`,
     backgroundColor: detailPanelBodyBg,
     borderLeft: '1px solid var(--sidebar-border-color)',
     borderTop: '1px solid var(--sidebar-border-color)',

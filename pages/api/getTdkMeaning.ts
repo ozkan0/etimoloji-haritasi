@@ -83,7 +83,7 @@ export default async function handler(
       }
 
       if (meanings.length === 0) {
-        meanings.push({ text: 'Anlam bulunamadı.' });
+        meanings.push({ type: '', text: 'Anlam bulunamadı.' });
       }
 
       if (meanings[0].text !== 'Anlam bulunamadı.') {

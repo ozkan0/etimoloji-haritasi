@@ -22,7 +22,7 @@ import TimeSlider from '../components/features/timeline/TimeSlider';
 
 // Logic / Types
 import { Word, Language, WordOnMap } from '../types/types';
-import { getRandomCoordinatesInBoundingBox } from '../utils/geoUtils';
+import { getPersistentCoordinates as getGeoCoordinates } from '../utils/geoUtils';
 import { useEtymologyData } from '../hooks/useEtymologyData';
 import { wordService } from '../services/wordService';
 import { mapOriginLanguageToTurkish } from '../config/languageMapping';
@@ -66,16 +66,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const [limitPerLang, setLimitPerLang] = useState(5);
 
   // --- MAP GENERATION LOGIC ---
-  const coordinateCache = useRef<Record<string, [number, number]>>({});
-
   const getPersistentCoordinates = useCallback((wordKey: string, languageData: Language): [number, number] => {
-    if (coordinateCache.current[wordKey]) {
-      return coordinateCache.current[wordKey];
+    let seed = 0;
+    for (let i = 0; i < wordKey.length; i++) {
+      seed = ((seed << 5) - seed) + wordKey.charCodeAt(i);
+      seed |= 0; 
     }
-
-    const newCoords = getRandomCoordinatesInBoundingBox(languageData);
-    coordinateCache.current[wordKey] = newCoords;
-    return newCoords;
+    return getGeoCoordinates(languageData, Math.abs(seed));
   }, []);
 
   const generateMapWords = useCallback((wordsToMap: Word[], limit: number) => {
@@ -120,10 +117,19 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   useEffect(() => {
     if (!isLoading && mapWords.length > 0) {
       const initialSet = generateMapWords(mapWords, 5);
-      setWordsOnMap(initialSet);
       setDefaultMapWords(initialSet);
+      setWordsOnMap(prev => {
+        const base = [...initialSet];
+        if (detailPanelWord) {
+          const onMap = prev.find(w => w.id === detailPanelWord.id);
+          if (onMap && !base.find(w => w.id === detailPanelWord.id)) {
+            base.push(onMap);
+          }
+        }
+        return base;
+      });
     }
-  }, [isLoading, mapWords, sidebarWords, generateMapWords]);
+  }, [isLoading, mapWords, generateMapWords, detailPanelWord]);
 
   // --- CENTRAL FILTERING (Map & Time) ---
   const mapSourceList = useMemo(() => {
@@ -155,23 +161,39 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       return wDate <= selectedYear;
     });
 
+    const ensureSelectedWordOnMap = (currentMapWords: WordOnMap[]): WordOnMap[] => {
+      if (!detailPanelWord || !allLanguages) return currentMapWords;
+      if (currentMapWords.find(w => w.id === detailPanelWord.id)) return currentMapWords;
+
+      const dbLang = mapOriginLanguageToTurkish(detailPanelWord.originLanguage);
+      const languageData = allLanguages.find(lang =>
+        lang.language.toLocaleLowerCase('tr-TR') === dbLang.toLocaleLowerCase('tr-TR')
+      );
+
+      if (languageData && languageData.boundingBox) {
+        const coords = getPersistentCoordinates(`${detailPanelWord.id}-${detailPanelWord.word}`, languageData);
+        return [...currentMapWords, { ...detailPanelWord, coordinates: coords }];
+      }
+      return currentMapWords;
+    };
+
     if (selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5 && mapSourceList.length === mapWords.length) {
-      setWordsOnMap(defaultMapWords);
+      setWordsOnMap(ensureSelectedWordOnMap([...defaultMapWords]));
     } else {
       const newMapSet = generateMapWords(timeFilteredList, limitPerLang);
-      setWordsOnMap(newMapSet);
+      setWordsOnMap(ensureSelectedWordOnMap(newMapSet));
     }
-  }, [selectedYear, mapSourceList, defaultMapWords, generateMapWords, limitPerLang, mapWords.length]);
+  }, [selectedYear, mapSourceList, defaultMapWords, generateMapWords, limitPerLang, mapWords.length, detailPanelWord, allLanguages, getPersistentCoordinates]);
 
 
   // --- HANDLERS ---
 
-  const handleFilterChange = (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, languageMode: 'origin' | 'immediate') => {
+  const handleFilterChange = useCallback((searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, languageMode: 'origin' | 'immediate') => {
     setCurrentSearchTerm(searchTerm);
     setCurrentActiveLang(activeLang);
     setCurrentActivePeriod(activePeriod);
     setCurrentLanguageMode(languageMode);
-  };
+  }, []);
 
   const handleWordSelect = useCallback((selectedWord: Word) => {
     if (!allLanguages) return;
@@ -181,30 +203,30 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     );
 
     setDetailPanelWord(selectedWord);
-  setIsRightSidebarVisible(true);
+    setIsRightSidebarVisible(true);
 
     const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
     if (existingWord) {
       setMapFlyToTarget(existingWord.coordinates);
     } else {
       if (languageData && languageData.boundingBox) {
-        const newCoordinates = getPersistentCoordinates(selectedWord.id.toString(), languageData);
+        const newCoordinates = getPersistentCoordinates(`${selectedWord.id}-${selectedWord.word}`, languageData);
         const newWordOnMap: WordOnMap = { ...selectedWord, coordinates: newCoordinates };
         setWordsOnMap(prev => [...prev, newWordOnMap]);
         setMapFlyToTarget(newCoordinates);
       }
     }
-  }, [allLanguages, wordsOnMap]);
+  }, [allLanguages, wordsOnMap, getPersistentCoordinates]);
 
-  const handleMarkerClick = (word: WordOnMap) => {
+  const handleMarkerClick = useCallback((word: WordOnMap) => {
     setDetailPanelWord(word);
     setIsRightSidebarVisible(true);
-  };
+  }, []);
 
-  const handleQuickFilter = (type: 'language' | 'period', value: string) => {
+  const handleQuickFilter = useCallback((type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
-  };
+  }, []);
 
   const handleGoHome = useCallback(() => {
     setDetailPanelWord(null);
