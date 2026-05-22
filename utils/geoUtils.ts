@@ -36,7 +36,3 @@ export const getPersistentCoordinates = (language: Language, seed: number): [num
 
   return [randomPoint[1], randomPoint[0]];
 };
-
-export const getRandomCoordinatesInBoundingBox = (language: Language): [number, number] => {
-  return getPersistentCoordinates(language, Math.random() * 1000000);
-};
