@@ -1,14 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabaseClient';
 
-function getCalculatedPeriod(dateValue: number | undefined | null): string {
-    if (typeof dateValue === 'number') {
-        if (dateValue < 1300) return 'Osmanlı Öncesi';
-        if (dateValue <= 1928) return 'Osmanlı';
-    }
-    return 'Cumhuriyet';
-}
-
 interface WordStatRow {
     id: number;
     originLanguage: string;
