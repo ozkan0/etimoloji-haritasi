@@ -146,6 +146,20 @@ body {
   }
 }
 
+[data-map-effects='off'] .modern-marker,
+[data-map-effects='off'] .modern-marker.active {
+  animation: none;
+  box-shadow: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.refresh-markers-icon.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
 /* Active State */
 .modern-marker.active {
   animation: none;
@@ -228,7 +242,7 @@ body {
   z-index: 1100;
   height: 70px;
   width: 25px;
-  background-color: var(--main-buttons-bg);
+  background-color: var(--detailspanel-header-bg);
   color: white;
   border: none;
   border-top-right-radius: 8px;
@@ -238,11 +252,11 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  transition: left 0.3s ease-in-out;
+  transition: left 0.3s ease-in-out, background-color 0.2s ease;
 }
 
 .toggle-sidebar-button:hover {
-  background-color: var(--main-buttons-hover-bg);
+  background-color: var(--detailspanel-header-bg-hover);
 }
 
 .toggle-right-sidebar-button {
