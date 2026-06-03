@@ -48,6 +48,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(false);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
+  const [lastOpenedPanel, setLastOpenedPanel] = useState<'left' | 'right' | null>(null);
 
   // --- MAP DATA STATES ---
   const [wordsOnMap, setWordsOnMap] = useState<WordOnMap[]>([]);
@@ -205,6 +206,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
     setDetailPanelWord(selectedWord);
     setIsRightSidebarVisible(true);
+    setLastOpenedPanel('right');
 
     const existingWord = wordsOnMap.find(w => w.id === selectedWord.id);
     if (existingWord) {
@@ -222,11 +224,13 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const handleMarkerClick = useCallback((word: WordOnMap) => {
     setDetailPanelWord(word);
     setIsRightSidebarVisible(true);
+    setLastOpenedPanel('right');
   }, []);
 
   const handleQuickFilter = useCallback((type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
     setIsSidebarVisible(true);
+    setLastOpenedPanel('left');
   }, []);
 
   const handleGoHome = useCallback(() => {
@@ -246,12 +250,32 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     }
   }, [router]);
 
-  const toggleSidebar = () => setIsSidebarVisible(prev => !prev);
+  const toggleSidebar = () => {
+    const next = !isSidebarVisible;
+    setIsSidebarVisible(next);
+    if (next) setLastOpenedPanel('left');
+  };
   const toggleRightSidebar = () => {
     if (!detailPanelWord) return;
-    setIsRightSidebarVisible(prev => !prev);
+    const next = !isRightSidebarVisible;
+    setIsRightSidebarVisible(next);
+    if (next) setLastOpenedPanel('right');
   };
   const toggleAboutPanel = () => setIsAboutPanelVisible(prev => !prev);
+
+  const handleBackdropClick = () => {
+    if (isSidebarVisible && isRightSidebarVisible) {
+      if (lastOpenedPanel === 'left') setIsSidebarVisible(false);
+      else setIsRightSidebarVisible(false);
+    } else if (isRightSidebarVisible) {
+      setIsRightSidebarVisible(false);
+    } else if (isSidebarVisible) {
+      setIsSidebarVisible(false);
+    }
+  };
+
+  const leftSidebarZ = lastOpenedPanel === 'left' ? 1003 : 1002;
+  const rightPanelZ = lastOpenedPanel === 'left' ? 1002 : 1003;
 
   // --- URL SYNC ---
   useEffect(() => {
@@ -321,6 +345,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       <RefreshMarkersButton onClick={refreshMapWords} isRefreshing={isRefreshing} />
 
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
+
+      {(isSidebarVisible || (detailPanelWord && isRightSidebarVisible)) && (
+        <div className="mobile-backdrop" onClick={handleBackdropClick} aria-hidden="true" />
+      )}
+
       <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
       {detailPanelWord && (
         <ToggleRightSidebarButton isVisible={isRightSidebarVisible} onClick={toggleRightSidebar} />
@@ -334,6 +363,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         isVisible={isSidebarVisible}
         onFilterChange={handleFilterChange}
         externalFilterTrigger={filterTrigger}
+        zIndex={leftSidebarZ}
       />
 
       <main style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0 }}>
@@ -363,6 +393,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         onFilterTrigger={handleQuickFilter}
         activeFilterLanguage={currentActiveLang}
         activeFilterPeriod={currentActivePeriod}
+        zIndex={rightPanelZ}
       />
       <StatsPanel
         isOpen={isStatsPanelOpen}

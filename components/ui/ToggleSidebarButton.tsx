@@ -7,7 +7,7 @@ interface ToggleSidebarButtonProps {
 
 const ToggleSidebarButton: React.FC<ToggleSidebarButtonProps> = ({ isVisible, onClick }) => {
   const dynamicStyle: React.CSSProperties = {
-    left: isVisible ? '350px' : '0px',
+    left: isVisible ? 'var(--left-sidebar-w)' : '0px',
   };
 
   return (

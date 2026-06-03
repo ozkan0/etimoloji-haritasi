@@ -3,7 +3,6 @@ import { Word } from '../../types/types';
 import SubmissionModal from '../ui/SubmissionModal';
 import { trackEvent } from '../../lib/analytics';
 import { getWordMeaning, getAiEtymology, TdkMeaning } from '../../lib/api';
-import { UI_CONFIG } from '../../lib/constants';
 
 interface LiveTdkData {
   meanings: TdkMeaning[];
@@ -17,6 +16,7 @@ interface RightDetailPanelProps {
   onFilterTrigger: (type: 'language' | 'period', value: string) => void;
   activeFilterLanguage: string;
   activeFilterPeriod: string;
+  zIndex?: number;
 }
 
 const getFlagUrl = (lang: string) => {
@@ -36,7 +36,8 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   onClose,
   onFilterTrigger,
   activeFilterLanguage,
-  activeFilterPeriod
+  activeFilterPeriod,
+  zIndex = 1003
 }) => {
   const [liveData, setLiveData] = useState<LiveTdkData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -163,12 +164,12 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     right: '0',
     bottom: '0',
     height: 'auto',
-    width: `min(${UI_CONFIG.DETAIL_PANEL_WIDTH}px, 100vw)`,
+    width: 'var(--right-panel-w)',
     backgroundColor: detailPanelBodyBg,
     borderLeft: '1px solid var(--sidebar-border-color)',
     borderTop: '1px solid var(--sidebar-border-color)',
     boxShadow: '-8px 0 28px rgba(0, 0, 0, 0.28)',
-    zIndex: 1002,
+    zIndex: zIndex,
     transform: transformValue,
     transition: 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)',
     display: 'flex',

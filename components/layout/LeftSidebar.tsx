@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Word } from '../../types/types';
 import { trackEvent } from '../../lib/analytics';
-import { APP_CONFIG, PERIOD_COLORS, PERIOD_NAMES, normalizePeriodLabel, UI_CONFIG } from '../../lib/constants';
+import { PERIOD_COLORS, PERIOD_NAMES, normalizePeriodLabel } from '../../lib/constants';
 import { wordService } from '../../services/wordService';
 
 interface LeftSidebarProps {
@@ -12,6 +12,7 @@ interface LeftSidebarProps {
   isVisible: boolean;
   onFilterChange: (searchTerm: string, applyToMap: boolean, activeLang: string, activePeriod: string, languageMode: 'origin' | 'immediate') => void;
   externalFilterTrigger?: { type: 'language' | 'period', value: string, timestamp: number } | null;
+  zIndex?: number;
 }
 
 // --- CUSTOM DROPDOWN ---
@@ -84,7 +85,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({ options, value, onChange }) =
   );
 };
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSelect, onHomeClick, isVisible, onFilterChange, externalFilterTrigger }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSelect, onHomeClick, isVisible, onFilterChange, externalFilterTrigger, zIndex = 1002 }) => {
 
   // --- STATE ---
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
@@ -234,10 +235,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
 
   const [isFetchingList, setIsFetchingList] = useState(false);
   const handleFetchList = async () => {
+    if (activeSearchTerm.trim()) {
+      setSearchQuery(activeSearchTerm);
+      return;
+    }
+
     setIsFetchingList(true);
-    setActiveSearchTerm('');
     setSearchQuery('');
-    
+
     try {
       const results = await wordService.fetchFilteredWords(activeLanguageFilter, normalizePeriodLabel(activePeriodFilter), languageMode, 300);
       setSearchResults(results);
@@ -250,7 +255,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   };
 
   // --- STYLES ---
-  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: 1001, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: `${UI_CONFIG.SIDEBAR_WIDTH}px`, backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '0 22px 22px 0', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
+  const dynamicSidebarStyle: React.CSSProperties = { position: 'absolute', height: '100vh', zIndex: zIndex, transition: 'transform 0.3s ease-in-out', boxShadow: '0 4px 25px rgba(0, 0, 0, 0.1)', width: 'var(--left-sidebar-w)', backgroundColor: 'var(--sidebar-main-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-lora), serif', borderRadius: '0 22px 22px 0', overflow: 'hidden', transform: isVisible ? 'translateX(0)' : 'translateX(-100%)', };
   const headerStyle: React.CSSProperties = { padding: '20px 20px 15px 20px', backgroundColor: 'var(--sidebar-header-bg)', color: 'white' };
 
   const searchContainerStyle: React.CSSProperties = { position: 'relative', display: 'flex', alignItems: 'center', width: '100%', marginBottom: '15px', marginTop: '14px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255, 243, 224, 0.1)', padding: '4px 10px' };

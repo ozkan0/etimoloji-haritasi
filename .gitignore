@@ -44,5 +44,9 @@ next-env.d.ts
 .github/agents/*.agent.md
 .github/agents/**/*.agent.md
 
+# claude code (local config, hooks, project memory)
+.claude/
+CLAUDE.md
+
 # ide
 .idea/

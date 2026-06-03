@@ -16,6 +16,9 @@ body {
 
 /* Light Theme */
 :root {
+  --left-sidebar-w: 350px;
+  --right-panel-w: min(390px, 100vw);
+
   --sidebar-main-bg: #e3f7ff;
   --sidebar-header-bg: #5885AF;
   --sidebar-border-color: #dee2e6;
@@ -437,6 +440,39 @@ body {
   background: var(--sidebar-main-bg);
   border: none;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-backdrop {
+  display: none;
+}
+
+@keyframes backdrop-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --left-sidebar-w: min(88vw, 350px);
+    --right-panel-w: min(88vw, 390px);
+  }
+
+  .toggle-sidebar-button {
+    top: 42%;
+  }
+
+  .toggle-right-sidebar-button {
+    top: 62%;
+  }
+
+  .mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    z-index: 1001;
+    animation: backdrop-fade-in 0.2s ease;
+  }
 }
 
 .word-of-the-day-card:hover {
