@@ -96,7 +96,7 @@ const Map: React.FC<MapProps> = ({
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: theme === 'light' ? '#e3f7ff' : '#191a1a' }}
       maxBounds={mapBounds}
-      minZoom={4}
+      minZoom={3}
       maxZoom={7}
       zoomControl={false}
     >

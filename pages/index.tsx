@@ -229,8 +229,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   const handleQuickFilter = useCallback((type: 'language' | 'period', value: string) => {
     setFilterTrigger({ type, value, timestamp: Date.now() });
-    setIsSidebarVisible(true);
-    setLastOpenedPanel('left');
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+    if (!isMobile) {
+      setIsSidebarVisible(true);
+      setLastOpenedPanel('left');
+    }
   }, []);
 
   const handleGoHome = useCallback(() => {
