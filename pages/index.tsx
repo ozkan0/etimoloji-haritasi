@@ -350,9 +350,9 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         <div className="mobile-backdrop" onClick={handleBackdropClick} aria-hidden="true" />
       )}
 
-      <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} />
+      <ToggleSidebarButton isVisible={isSidebarVisible} onClick={toggleSidebar} zIndex={leftSidebarZ} />
       {detailPanelWord && (
-        <ToggleRightSidebarButton isVisible={isRightSidebarVisible} onClick={toggleRightSidebar} />
+        <ToggleRightSidebarButton isVisible={isRightSidebarVisible} onClick={toggleRightSidebar} zIndex={rightPanelZ} />
       )}
 
       <LeftSidebar
