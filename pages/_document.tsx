@@ -12,6 +12,11 @@ export default function Document() {
         />
       </Head>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.body.setAttribute('data-theme',t);}catch(e){document.body.setAttribute('data-theme','dark');}})();`,
+          }}
+        />
         <Main />
         <NextScript />
       </body>

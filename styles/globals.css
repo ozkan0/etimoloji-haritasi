@@ -41,7 +41,7 @@ body {
   --popup-button-text: white;
   --popup-button-hover-bg: #007acc;
 
-  --marker-bg: #ffffff;
+  --marker-bg: #cbd5e1;
   --marker-text: #1e293b;
   --marker-border: #94a3b8;
   --marker-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -51,6 +51,20 @@ body {
   --secondary-action-rosewood: #A66B6B;
   --deep-input-bg: #161D24;
   --highlight-muted-gold: #D4AF37;
+
+  --detailspanel-bg: #f4f9fc;
+  --etymology-section-bg: #e8f1f5;
+  --etymology-text: #4a3f30;
+  --orange-accent: #d84315;
+  --controversial-text: #b45309;
+  --word-of-the-day-label: #b45309;
+  --listeye-getir-btn: #3b82f6;
+  --input-bg: #ffffff;
+
+  --badge-bg: rgba(0, 0, 0, 0.05);
+  --badge-border: rgba(0, 0, 0, 0.2);
+  --badge-text: #334155;
+  --badge-active-text: #9a3412;
 }
 
 /* Dark Theme */
@@ -72,6 +86,12 @@ body {
   --controversial-text: #FFD54F;
   --word-of-the-day-label: #FACC15;
   --listeye-getir-btn: rgba(59, 130, 246, 0.25);
+  --input-bg: #2C3540;
+
+  --badge-bg: rgba(255, 255, 255, 0.08);
+  --badge-border: rgba(255, 243, 224, 0.35);
+  --badge-text: #E2E8F0;
+  --badge-active-text: #fff3e0;
 
   --main-buttons-bg: #253347;
   --main-buttons-hover-bg: #1A2634;
@@ -278,7 +298,7 @@ body {
   justify-content: center;
   font-size: 18px;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
-  transition: right 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: right 0.3s ease-in-out;
 }
 
 .toggle-right-sidebar-button:hover {

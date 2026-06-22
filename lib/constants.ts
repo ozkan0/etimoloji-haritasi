@@ -7,9 +7,9 @@ export const APP_CONFIG = {
 
 export const MAP_CONFIG = {
   DEFAULT_CENTER: [39.9334, 32.8597] as [number, number],
-  DEFAULT_ZOOM: 4,
+  DEFAULT_ZOOM: 5,
   MIN_ZOOM: 3,
-  MAX_ZOOM: 8,
+  MAX_ZOOM: 7,
   BOUNDS: [
     [-40, -80], 
     [75, 170], 

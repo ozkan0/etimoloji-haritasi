@@ -110,8 +110,6 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     };
   }, [word?.id, word?.word, word?.originLanguage]);
 
-  const handleClose = (e: React.MouseEvent) => { e.stopPropagation(); setTimeout(onClose, 300); };
-
   const handleSpeak = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!word) return;
@@ -171,7 +169,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     boxShadow: '-8px 0 28px rgba(0, 0, 0, 0.28)',
     zIndex: zIndex,
     transform: transformValue,
-    transition: 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)',
+    transition: 'transform 0.3s ease-in-out',
     display: 'flex',
     flexDirection: 'column',
     color: 'var(--sidebar-text-primary)',
@@ -196,11 +194,9 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: 1, transition: 'opacity 0.2s' };
   const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: detailPanelBodyBg, flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
 
-  const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.25)', color: '#E2E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
+  const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--badge-bg)', border: '1px solid var(--badge-border)', color: 'var(--badge-text)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
   const filterBadgeBaseStyle: React.CSSProperties = {
     ...badgeStyle,
-    border: '1px solid rgba(255, 243, 224, 0.35)',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     boxShadow: 'none',
     transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
     minHeight: '34px'
@@ -209,10 +205,10 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     const isActive = type === 'language' ? (activeFilterLanguage === value) : (activeFilterPeriod === value);
     return {
       ...filterBadgeBaseStyle,
-      border: isActive ? '1px solid #f0b77a' : '1px solid rgba(255, 243, 224, 0.35)',
-      backgroundColor: isActive ? 'rgba(240, 183, 122, 0.14)' : 'rgba(255, 255, 255, 0.08)',
+      border: isActive ? '1px solid #f0b77a' : '1px solid var(--badge-border)',
+      backgroundColor: isActive ? 'rgba(240, 183, 122, 0.14)' : 'var(--badge-bg)',
       boxShadow: isActive ? '0 0 0 1px rgba(240, 183, 122, 0.15), 0 0 10px rgba(240, 183, 122, 0.25)' : 'none',
-      color: isActive ? '#fff3e0' : '#E2E8F0'
+      color: isActive ? 'var(--badge-active-text)' : 'var(--badge-text)'
     };
   };
 
@@ -392,7 +388,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Formül:</span>
-                      <span style={{ fontSize: '0.9rem', fontFamily: 'monospace', color: 'rgba(255, 255, 255, 0.9)', backgroundColor: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      <span style={{ fontSize: '0.9rem', fontFamily: 'monospace', color: 'var(--sidebar-text-primary)', backgroundColor: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {word.formula}
                       </span>
                     </div>
@@ -413,7 +409,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>Ek Bilgi:</span>
-                      <span style={{ fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.85)', lineHeight: '1.5' }}>{word.extraInfo}</span>
+                      <span style={{ fontSize: '0.95rem', color: 'var(--sidebar-text-primary)', lineHeight: '1.5' }}>{word.extraInfo}</span>
                     </div>
                   </>
                 )}
@@ -423,7 +419,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                     <hr style={{ border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', margin: 0 }} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--sidebar-text-secondary)', fontWeight: 600 }}>En Eski Kaynak:</span>
-                      <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)', fontStyle: 'italic', lineHeight: '1.4' }}>{word.source}</span>
+                      <span style={{ fontSize: '0.9rem', color: 'var(--sidebar-text-secondary)', fontStyle: 'italic', lineHeight: '1.4' }}>{word.source}</span>
                     </div>
                   </>
                 )}

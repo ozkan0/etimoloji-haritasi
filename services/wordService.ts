@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 import { normalizePeriodLabel } from '../lib/constants';
 import { Word } from '../types/types';
 import { normalizeTurkish } from '../utils/normalizeTurkish';
+import { shuffleInPlace } from '../utils/shuffle';
 
 interface WordsDbRow {
     id: number;
@@ -186,8 +187,7 @@ export const wordService = {
             })
         );
 
-        const flat = results.flat();
-        flat.sort(() => 0.5 - Math.random());
+        const flat = shuffleInPlace(results.flat());
         return flat.map((w: any) => processWordRecord(w as WordsDbRow));
     },
 

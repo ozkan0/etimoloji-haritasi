@@ -43,7 +43,7 @@ const CustomDropdown: React.FC<DropdownProps> = ({ options, value, onChange }) =
         style={{
           width: '100%', padding: '12px 16px', borderRadius: '10px',
           border: isOpen ? '1px solid var(--detailspanel-header-bg)' : '1px solid var(--sidebar-border-color)',
-          backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--sidebar-text-primary)',
+          backgroundColor: 'rgba(0,0,0,0.2)', color: '#FFF3E0',
           fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           transition: 'all 0.2s ease', boxShadow: isOpen ? '0 0 0 2px rgba(14, 165, 233, 0.2)' : 'none'
         }}
@@ -267,7 +267,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
   const wordDetailStyle: React.CSSProperties = { color: '#6A8688', marginTop: '4px', fontSize: '0.8rem', opacity: 0.95 };
   const footerStyle: React.CSSProperties = { position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: 'var(--sidebar-header-bg)', color: 'white', padding: '15px 20px', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 10, boxShadow: '0 -4px 15px rgba(0,0,0,0.15)', cursor: 'pointer', borderBottomLeftRadius: '22px', borderBottomRightRadius: '22px' };
   const resetButtonStyle: React.CSSProperties = { padding: '8px 16px', backgroundColor: 'rgba(255, 99, 71, 0.15)', border: '1px solid rgba(255, 99, 71, 0.4)', color: '#ffcccc', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap', fontFamily: 'inherit' };
-  const paginationButtonStyle: React.CSSProperties = { padding: '6px 12px', backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'white', borderRadius: '6px', fontSize: '0.8rem', transition: 'all 0.2s', fontFamily: 'inherit' };
+  const paginationButtonStyle: React.CSSProperties = { padding: '6px 12px', backgroundColor: 'var(--sidebar-item-hover-bg)', border: '1px solid var(--sidebar-border-color)', color: 'var(--sidebar-text-primary)', borderRadius: '6px', fontSize: '0.8rem', transition: 'all 0.2s', fontFamily: 'inherit' };
   const sliderLabelStyle: React.CSSProperties = { fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
   const rangeInputStyle: React.CSSProperties = { width: '100%', cursor: 'pointer', accentColor: 'var(--detailspanel-header-bg)' };
 
@@ -442,7 +442,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
             >
               Önceki
             </button>
-            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', color: 'white' }}>{currentPage}</span>
+            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', color: 'var(--sidebar-text-primary)' }}>{currentPage}</span>
             <button 
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
@@ -457,11 +457,11 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ allWords, dailyWord, onWordSe
       {dailyWord && (
         <div className="word-of-the-day-card" onClick={() => onWordSelect(dailyWord)} style={{ backgroundColor: 'var(--sidebar-main-bg)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="word-of-the-day-badge" style={{ color: 'var(--word-of-the-day-label)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#FACC15' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--word-of-the-day-label)' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             GÜNÜN KELİMESİ
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-            <div className="word-of-the-day-title" style={{ fontSize: '1.4rem', letterSpacing: '0.5px', color: '#F1E9DA' }}>{dailyWord.word}</div>
+            <div className="word-of-the-day-title" style={{ fontSize: '1.4rem', letterSpacing: '0.5px', color: 'var(--etymology-text)' }}>{dailyWord.word}</div>
             <div className="word-of-the-day-lang" style={{ border: '1px solid rgba(255, 255, 255, 0.2)', background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(4px)' }}>{(dailyWord as any).ultimateOriginLanguage || dailyWord.originLanguage}</div>
           </div>
         </div>
