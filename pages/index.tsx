@@ -47,6 +47,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   // --- UI STATES ---
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(false);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
@@ -58,8 +59,19 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   // --- SELECTION & FILTER STATES ---
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
+  const [hasViewedWord, setHasViewedWord] = useState(false);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
   const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
+
+  useEffect(() => { if (detailPanelWord) setHasViewedWord(true); }, [detailPanelWord]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const [selectedYear, setSelectedYear] = useState(APP_CONFIG.MAX_YEAR);
   const [currentSearchTerm, setCurrentSearchTerm] = useState('');
@@ -348,7 +360,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
         limitPerLang={limitPerLang}
         onLimitChange={setLimitPerLang}
       />
-      <RefreshMarkersButton onClick={refreshMapWords} isRefreshing={isRefreshing} />
+      <RefreshMarkersButton onClick={refreshMapWords} isRefreshing={isRefreshing} armed={hasViewedWord} panelOpen={(detailPanelWord !== null && isRightSidebarVisible) || (isMobile && isSidebarVisible)} isMobile={isMobile} />
 
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
 

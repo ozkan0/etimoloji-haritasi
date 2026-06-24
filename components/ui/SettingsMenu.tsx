@@ -52,7 +52,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
           borderRadius: '10px',
           border: '1px solid var(--sidebar-border-color)',
           backgroundColor: isOpen ? 'var(--main-buttons-hover-bg)' : 'var(--sidebar-header-bg)',
-          color: 'var(--sidebar-text-primary)',
+          color: '#FFFFFF',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -107,15 +107,64 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
           padding: '12px',
           borderBottom: '1px solid var(--sidebar-border-color)',
         }}>
+          <ThemeSwitch />
+
           <div style={{
-            fontSize: '0.65rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: '12px',
+          }}>
+            <div style={{
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: 'var(--sidebar-text-secondary)',
+            }}>
+              Harita efektleri
+            </div>
+            <button
+              role="switch"
+              aria-checked={mapEffectsEnabled}
+              aria-label="Harita efektlerini aç/kapat"
+              onClick={() => setMapEffectsEnabled(prev => !prev)}
+              style={{
+                position: 'relative',
+                width: '48px',
+                height: '26px',
+                flexShrink: 0,
+                borderRadius: '999px',
+                border: '1px solid var(--sidebar-border-color)',
+                backgroundColor: mapEffectsEnabled
+                  ? 'var(--primary-action-emerald)'
+                  : 'var(--sidebar-border-color)',
+                cursor: 'pointer',
+                padding: 0,
+                transition: 'background-color 0.2s ease',
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: '2px',
+                left: '2px',
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+                transform: mapEffectsEnabled ? 'translateX(22px)' : 'translateX(0)',
+                transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }} />
+            </button>
+          </div>
+
+          <div style={{
+            fontSize: '0.8rem',
             fontWeight: 600,
             color: 'var(--sidebar-text-secondary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.6px',
+            marginTop: '12px',
             marginBottom: '10px',
           }}>
-            Haritada Dil Başına Kelime
+            Haritada dil başına kelime
           </div>
           <div style={{
             display: 'flex',
@@ -124,8 +173,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
           }}>
             <input
               type="range"
-                min="5"
-                max="25"
+              min="5"
+              max="25"
               value={limitPerLang}
               onChange={(e) => onLimitChange(parseInt(e.target.value))}
               style={{
@@ -152,67 +201,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
               {limitPerLang}
             </span>
           </div>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: '12px',
-          }}>
-            <div style={{
-              fontSize: '0.65rem',
-              fontWeight: 600,
-              color: 'var(--sidebar-text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.6px',
-            }}>
-              Harita Efektleri
-            </div>
-            <button
-              role="switch"
-              aria-checked={mapEffectsEnabled}
-              aria-label="Harita efektlerini aç/kapat"
-              onClick={() => setMapEffectsEnabled(prev => !prev)}
-              style={{
-                position: 'relative',
-                width: '40px',
-                height: '22px',
-                flexShrink: 0,
-                borderRadius: '999px',
-                border: '1px solid var(--sidebar-border-color)',
-                backgroundColor: mapEffectsEnabled
-                  ? 'var(--primary-action-emerald)'
-                  : 'var(--sidebar-border-color)',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'background-color 0.2s ease',
-              }}
-            >
-              <span style={{
-                position: 'absolute',
-                top: '2px',
-                left: '2px',
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                backgroundColor: '#ffffff',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
-                transform: mapEffectsEnabled ? 'translateX(18px)' : 'translateX(0)',
-                transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              }} />
-            </button>
-          </div>
         </div>
-        
+
         <div style={{
           padding: '10px',
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
         }}>
-          <ThemeSwitch />
-          <AboutButton onClick={onAboutClick} />
           <StatsButton onClick={onStatsClick} />
+          <AboutButton onClick={onAboutClick} />
         </div>
       </div>
     </div>

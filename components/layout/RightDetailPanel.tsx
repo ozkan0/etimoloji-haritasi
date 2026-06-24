@@ -43,6 +43,10 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+  const [wordInHeader, setWordInHeader] = useState(false);
+  const [showFilterHint, setShowFilterHint] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   // --- AI ETYMOLOGY STATE ---
   const [aiDetails, setAiDetails] = useState<string | null>(null);
@@ -109,6 +113,30 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
       window.speechSynthesis.cancel();
     };
   }, [word?.id, word?.word, word?.originLanguage]);
+
+  // dynamic header title
+  useEffect(() => {
+    setWordInHeader(false);
+    const target = titleRef.current;
+    const root = contentRef.current;
+    if (!target || !root) return;
+    root.scrollTop = 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => setWordInHeader(!entry.isIntersecting),
+      { root, threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [word?.id, word?.word]);
+
+  useEffect(() => {
+    try { if (!localStorage.getItem('etim_filter_hint_seen')) setShowFilterHint(true); } catch {}
+  }, []);
+
+  const dismissFilterHint = () => {
+    setShowFilterHint(false);
+    try { localStorage.setItem('etim_filter_hint_seen', '1'); } catch {}
+  };
 
   const handleSpeak = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -184,15 +212,15 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     color: 'white',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     flexShrink: 0,
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.22)',
     borderTopLeftRadius: '22px',
     height: '56px',
     transition: 'background-color 0.2s'
   };
-  const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: 1, transition: 'opacity 0.2s' };
-  const footerStyle: React.CSSProperties = { padding: '12px 24px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: detailPanelBodyBg, flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
+  const contentStyle: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '24px', opacity: 1, transition: 'opacity 0.2s' };
+  const footerStyle: React.CSSProperties = { padding: '12px 20px', borderTop: '1px solid var(--sidebar-border-color)', backgroundColor: detailPanelBodyBg, flexShrink: 0, display: 'flex', flexDirection: 'row', gap: '12px', paddingBottom: '10px', opacity: 1, transition: 'opacity 0.2s' };
 
   const badgeStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: 'var(--badge-bg)', border: '1px solid var(--badge-border)', color: 'var(--badge-text)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', gap: '6px', cursor: 'pointer', userSelect: 'none' };
   const filterBadgeBaseStyle: React.CSSProperties = {
@@ -207,7 +235,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
       ...filterBadgeBaseStyle,
       border: isActive ? '1px solid #f0b77a' : '1px solid var(--badge-border)',
       backgroundColor: isActive ? 'rgba(240, 183, 122, 0.14)' : 'var(--badge-bg)',
-      boxShadow: isActive ? '0 0 0 1px rgba(240, 183, 122, 0.15), 0 0 10px rgba(240, 183, 122, 0.25)' : 'none',
+      boxShadow: isActive ? 'var(--badge-active-shadow)' : 'none',
       color: isActive ? 'var(--badge-active-text)' : 'var(--badge-text)'
     };
   };
@@ -250,16 +278,16 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     <div style={panelStyle} className="right-panel-modern">
       <div style={headerStyle}>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Detay Paneli</h2>
+          <h2 key={wordInHeader ? 'word' : 'default'} className="detail-header-title" style={{ margin: 0, fontSize: 'calc(1.05rem + 4px)', fontWeight: 600 }}>{wordInHeader && word ? word.word : 'Detay Paneli'}</h2>
         </div>
       </div>
 
       {word && (
         <>
-          <div className="right-panel-content" style={contentStyle}>
+          <div className="right-panel-content" style={contentStyle} ref={contentRef}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '16px' }}>
-                <h1 style={{ margin: 0, fontSize: '2.35rem', fontWeight: 800, letterSpacing: '-0.8px', lineHeight: 1.05 }}>{word.word}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '16px' }}>
+                <h1 ref={titleRef} style={{ margin: 0, fontSize: '2.35rem', fontWeight: 800, letterSpacing: '-0.8px', lineHeight: 1.05 }}>{word.word}</h1>
                 <button onClick={handleSpeak} title="Sesli Dinle" style={{
                   background: isPlaying ? 'var(--detailspanel-header-bg)' : 'var(--sidebar-item-hover-bg)',
                   border: '1px solid var(--sidebar-border-color)', borderRadius: '50%', width: '40px', height: '40px',
@@ -282,6 +310,21 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                 </span>
                 {word.date && <span style={{ ...badgeStyle, fontSize: '0.8rem', opacity: 0.9, cursor: 'default' }} title="İlk Tespit Tarihi">{word.date}</span>}
               </div>
+
+              {showFilterHint && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                  marginTop: '12px', padding: '8px 8px 8px 12px', borderRadius: '8px',
+                  backgroundColor: 'var(--accent-soft)', border: '1px solid var(--sidebar-border-color)',
+                  fontSize: '0.78rem', fontWeight: 500, color: 'var(--filter-hint-text)',
+                }}>
+                  <span style={{ fontStyle: 'italic' }}>Hızlı filtrelemek için etiketlere tıklayın</span>
+                  <button onClick={dismissFilterHint} aria-label="Kapat" style={{
+                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--filter-hint-text)',
+                    fontSize: '1.15rem', lineHeight: 1, padding: '0 2px', flexShrink: 0,
+                  }}>×</button>
+                </div>
+              )}
             </div>
 
             <hr style={{ border: 'none', borderBottom: '1px solid var(--sidebar-border-color)', margin: 0 }} />

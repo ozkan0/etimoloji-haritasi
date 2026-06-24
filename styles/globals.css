@@ -21,13 +21,13 @@ body {
 
   --sidebar-main-bg: #e3f7ff;
   --sidebar-header-bg: #5885AF;
-  --sidebar-border-color: #dee2e6;
+  --sidebar-border-color: #80a0b0;
   --sidebar-text-primary: #212529;
   --sidebar-text-secondary: #6c757d;
   --sidebar-item-hover-bg: #e9ecef;
 
-  --detailspanel-header-bg: #0094ff;
-  --detailspanel-header-bg-hover: #007acc;
+  --detailspanel-header-bg: #2f86a8;
+  --detailspanel-header-bg-hover: #25697f;
 
   --main-buttons-bg: #5885AF;
   --main-buttons-hover-bg: #4a6d8c;
@@ -37,9 +37,9 @@ body {
   --popup-text-secondary: #666;
   --popup-border-color: #ccc;
   --popup-shadow-color: rgba(0, 0, 0, 0.2);
-  --popup-button-bg: #0094ff;
+  --popup-button-bg: #2f86a8;
   --popup-button-text: white;
-  --popup-button-hover-bg: #007acc;
+  --popup-button-hover-bg: #25697f;
 
   --marker-bg: #cbd5e1;
   --marker-text: #1e293b;
@@ -58,11 +58,15 @@ body {
   --orange-accent: #d84315;
   --controversial-text: #b45309;
   --word-of-the-day-label: #b45309;
-  --listeye-getir-btn: #3b82f6;
+  --listeye-getir-btn: #2f86a8;
   --input-bg: #ffffff;
+  --accent-soft: rgba(47, 134, 168, 0.14);
+  --hint-bubble-bg: #3f628c;
+  --filter-hint-text: #6c757d;
 
   --badge-bg: rgba(0, 0, 0, 0.05);
   --badge-border: rgba(0, 0, 0, 0.2);
+  --badge-active-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.28);
   --badge-text: #334155;
   --badge-active-text: #9a3412;
 }
@@ -85,11 +89,15 @@ body {
   --orange-accent: #FF7043;
   --controversial-text: #FFD54F;
   --word-of-the-day-label: #FACC15;
-  --listeye-getir-btn: rgba(59, 130, 246, 0.25);
+  --listeye-getir-btn: rgba(47, 134, 168, 0.28);
   --input-bg: #2C3540;
+  --accent-soft: rgba(45, 116, 130, 0.30);
+  --hint-bubble-bg: #3c5a7a;
+  --filter-hint-text: #a3b4bd;
 
   --badge-bg: rgba(255, 255, 255, 0.08);
   --badge-border: rgba(255, 243, 224, 0.35);
+  --badge-active-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.9), inset 0 -1px 2px rgba(255, 255, 255, 0.07);
   --badge-text: #E2E8F0;
   --badge-active-text: #fff3e0;
 
@@ -303,6 +311,30 @@ body {
 
 .toggle-right-sidebar-button:hover {
   background-color: var(--detailspanel-header-bg-hover);
+}
+
+.filter-action-btn:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+}
+
+@keyframes detailTitleFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hintBubbleIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hintBubbleOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+.detail-header-title {
+  animation: detailTitleFade 0.22s ease;
 }
 
 
