@@ -85,19 +85,19 @@ const Map: React.FC<MapProps> = ({
   selectedWordKey
 }) => {
   const { theme } = useTheme();
-  const mapBounds: LatLngBoundsExpression = [[-40, -80], [75, 170]];
+  const mapBounds: LatLngBoundsExpression = MAP_CONFIG.BOUNDS;
   const lightMapUrl = MAP_CONFIG.TILES.LIGHT;
   const darkMapUrl = MAP_CONFIG.TILES.DARK(process.env.NEXT_PUBLIC_JAWG_TOKEN || '');
 
   return (
     <MapContainer
-      center={[39.9334, 32.8597]}
-      zoom={5}
+      center={MAP_CONFIG.DEFAULT_CENTER}
+      zoom={MAP_CONFIG.DEFAULT_ZOOM}
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%', zIndex: 0, backgroundColor: theme === 'light' ? '#e3f7ff' : '#191a1a' }}
       maxBounds={mapBounds}
-      minZoom={3}
-      maxZoom={7}
+      minZoom={MAP_CONFIG.MIN_ZOOM}
+      maxZoom={MAP_CONFIG.MAX_ZOOM}
       zoomControl={false}
     >
       <MapZoomHandler />

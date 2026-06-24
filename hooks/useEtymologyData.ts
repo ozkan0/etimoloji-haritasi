@@ -1,15 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Word } from '../types/types';
 import { wordService } from '../services/wordService';
+import { shuffleInPlace } from '../utils/shuffle';
 
 const MAP_BUFFER_SIZE = 1500;
-
-const shuffleInPlace = <T,>(arr: T[]): void => {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-};
 
 export const useEtymologyData = () => {
   const [sidebarWords, setSidebarWords] = useState<Word[]>([]);
@@ -23,42 +17,43 @@ export const useEtymologyData = () => {
   const wordIdsRef = useRef<number[]>([]);
   const idCursorRef = useRef(0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const count = await wordService.getWordCount();
-        const ids = await wordService.fetchAllWordIds(count);
-        shuffleInPlace(ids);
-        wordIdsRef.current = ids;
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const count = await wordService.getWordCount();
+      const ids = await wordService.fetchAllWordIds(count);
+      shuffleInPlace(ids);
+      wordIdsRef.current = ids;
 
-        if (ids.length > 0) {
-          const firstChunk = ids.slice(0, MAP_BUFFER_SIZE);
-          const mapW = await wordService.fetchWordsByIds(firstChunk);
-          setMapWords(mapW);
-          setSidebarWords(mapW.slice(0, 20));
-          idCursorRef.current = firstChunk.length;
-        } else {
-          setMapWords([]);
-          setSidebarWords([]);
-        }
-
-        const daily = await wordService.fetchDailyWord();
-        setDailyWord(daily);
-
-        const news = await wordService.fetchNewsItems();
-        setNewsItems(news);
-
-      } catch (err) {
-        console.error('Data fetch error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch etymology data from the server.');
-      } finally {
-        setIsLoading(false);
+      if (ids.length > 0) {
+        const firstChunk = ids.slice(0, MAP_BUFFER_SIZE);
+        const mapW = await wordService.fetchWordsByIds(firstChunk);
+        setMapWords(mapW);
+        setSidebarWords(mapW.slice(0, 20));
+        idCursorRef.current = firstChunk.length;
+      } else {
+        setMapWords([]);
+        setSidebarWords([]);
       }
-    };
 
-    fetchData();
+      const daily = await wordService.fetchDailyWord();
+      setDailyWord(daily);
+
+      const news = await wordService.fetchNewsItems();
+      setNewsItems(news);
+
+    } catch (err) {
+      console.error('Data fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch etymology data from the server.');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const refreshMapWords = useCallback(async () => {
     const ids = wordIdsRef.current;
@@ -86,5 +81,5 @@ export const useEtymologyData = () => {
     }
   }, []);
 
-  return { sidebarWords, mapWords, dailyWord, newsItems, isLoading, isRefreshing, error, refreshMapWords };
+  return { sidebarWords, mapWords, dailyWord, newsItems, isLoading, isRefreshing, error, refreshMapWords, retry: fetchData };
 };

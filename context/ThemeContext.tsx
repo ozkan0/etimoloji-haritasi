@@ -11,18 +11,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>('dark');
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as Theme | null;
-    if (storedTheme) {
+    if (storedTheme === 'light' || storedTheme === 'dark') {
       setTheme(storedTheme);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      setTheme('light');
     }
+    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!isHydrated) return;
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
-  }, [theme]);
+  }, [theme, isHydrated]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));

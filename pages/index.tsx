@@ -15,6 +15,7 @@ import ToggleRightSidebarButton from '../components/ui/ToggleRightSidebarButton'
 import SettingsMenu from '../components/ui/SettingsMenu';
 import RefreshMarkersButton from '../components/ui/RefreshMarkersButton';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import ErrorScreen from '../components/ui/ErrorScreen';
 import MetaHead from '../components/ui/MetaHead';
 
 // Features
@@ -27,6 +28,7 @@ import { getPersistentCoordinates as getGeoCoordinates } from '../utils/geoUtils
 import { useEtymologyData } from '../hooks/useEtymologyData';
 import { wordService } from '../services/wordService';
 import { mapOriginLanguageToTurkish } from '../config/languageMapping';
+import { APP_CONFIG } from '../lib/constants';
 
 const MapComponent = dynamic(() => import('../components/map/Map'), {
   ssr: false,
@@ -41,10 +43,11 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   const router = useRouter();
 
   // --- DATA FETCHING ---
-  const { sidebarWords, mapWords, dailyWord, newsItems, isLoading, isRefreshing, refreshMapWords } = useEtymologyData();
+  const { sidebarWords, mapWords, dailyWord, newsItems, isLoading, isRefreshing, error, refreshMapWords, retry } = useEtymologyData();
 
   // --- UI STATES ---
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(false);
   const [isAboutPanelVisible, setIsAboutPanelVisible] = useState(false);
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
@@ -56,16 +59,27 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
 
   // --- SELECTION & FILTER STATES ---
   const [detailPanelWord, setDetailPanelWord] = useState<Word | null>(null);
+  const [hasViewedWord, setHasViewedWord] = useState(false);
   const [mapFlyToTarget, setMapFlyToTarget] = useState<[number, number] | null>(null);
   const [filterTrigger, setFilterTrigger] = useState<{ type: 'language' | 'period', value: string, timestamp: number } | null>(null);
 
-  const [selectedYear, setSelectedYear] = useState(2025);
+  useEffect(() => { if (detailPanelWord) setHasViewedWord(true); }, [detailPanelWord]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  const [selectedYear, setSelectedYear] = useState(APP_CONFIG.MAX_YEAR);
   const [currentSearchTerm, setCurrentSearchTerm] = useState('');
 
   const [currentActiveLang, setCurrentActiveLang] = useState('Tüm Diller');
   const [currentActivePeriod, setCurrentActivePeriod] = useState('Tüm Dönemler');
   const [currentLanguageMode, setCurrentLanguageMode] = useState<'origin' | 'immediate'>('origin');
-  const [limitPerLang, setLimitPerLang] = useState(5);
+  const [limitPerLang, setLimitPerLang] = useState(APP_CONFIG.DEFAULT_LIMIT_PER_LANG);
 
   // --- MAP GENERATION LOGIC ---
   const getPersistentCoordinates = useCallback((wordKey: string, languageData: Language): [number, number] => {
@@ -118,7 +132,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
   // --- INITIAL MAP POPULATION ---
   useEffect(() => {
     if (!isLoading && mapWords.length > 0) {
-      const initialSet = generateMapWords(mapWords, 5);
+      const initialSet = generateMapWords(mapWords, APP_CONFIG.DEFAULT_LIMIT_PER_LANG);
       setDefaultMapWords(initialSet);
       setWordsOnMap(prev => {
         const base = [...initialSet];
@@ -179,7 +193,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       return currentMapWords;
     };
 
-    if (selectedYear >= 2025 && defaultMapWords.length > 0 && limitPerLang === 5 && mapSourceList.length === mapWords.length) {
+    if (selectedYear >= APP_CONFIG.MAX_YEAR && defaultMapWords.length > 0 && limitPerLang === APP_CONFIG.DEFAULT_LIMIT_PER_LANG && mapSourceList.length === mapWords.length) {
       setWordsOnMap(ensureSelectedWordOnMap([...defaultMapWords]));
     } else {
       const newMapSet = generateMapWords(timeFilteredList, limitPerLang);
@@ -286,7 +300,7 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
     const currentQuery = router.query.word;
     if (detailPanelWord) {
       if (currentQuery !== detailPanelWord.word) {
-        router.replace(`/?word=${detailPanelWord.word}`, undefined, { shallow: true });
+        router.replace({ pathname: '/', query: { word: detailPanelWord.word } }, undefined, { shallow: true });
       }
     }
   }, [detailPanelWord, router.isReady, router.query.word]);
@@ -339,13 +353,14 @@ const Home: NextPage<HomeProps> = ({ allLanguages = [] }) => {
       <MetaHead selectedWord={detailPanelWord} />
 
       <LoadingScreen isLoading={isLoading} />
-      <SettingsMenu 
+      {error && !isLoading && <ErrorScreen onRetry={retry} />}
+      <SettingsMenu
         onAboutClick={toggleAboutPanel} 
         onStatsClick={() => setIsStatsPanelOpen(true)} 
         limitPerLang={limitPerLang}
         onLimitChange={setLimitPerLang}
       />
-      <RefreshMarkersButton onClick={refreshMapWords} isRefreshing={isRefreshing} />
+      <RefreshMarkersButton onClick={refreshMapWords} isRefreshing={isRefreshing} armed={hasViewedWord} panelOpen={(detailPanelWord !== null && isRightSidebarVisible) || (isMobile && isSidebarVisible)} isMobile={isMobile} />
 
       <AboutPanel isVisible={isAboutPanelVisible} onClose={() => setIsAboutPanelVisible(false)} />
 

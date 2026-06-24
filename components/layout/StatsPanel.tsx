@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import VerticalBarChart from '../features/graphs/VerticalBarChart';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface StatsPanelProps {
   isOpen: boolean;
@@ -67,9 +66,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
     position: 'fixed',
     bottom: '20px',
     left: '50%',
-    width: 'calc(100vw - 780px)',
-    minWidth: '600px',
-    maxWidth: '1200px',
+    width: 'clamp(min(600px, calc(100vw - 24px)), calc(100vw - 780px), 1200px)',
     height: '340px',
 
     transform: isOpen ? 'translate(-50%, 0)' : 'translate(-50%, 120%)',
@@ -134,7 +131,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isOpen, onClose }) => {
         
         <div style={headerStyle}>
             <div />
-            
+
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
