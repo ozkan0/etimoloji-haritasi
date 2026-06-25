@@ -50,6 +50,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
 
   // --- AI ETYMOLOGY STATE ---
   const [aiDetails, setAiDetails] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   // --- SUBMISSION MODAL STATE ---
@@ -86,6 +87,7 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
     setLiveData(null);
     setIsReported(false);
     setAiDetails(null);
+    setAiError(null);
     setIsAiLoading(false);
 
     getWordMeaning(word.word)
@@ -150,13 +152,14 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
 
   const handleFetchAiDetails = async () => {
     if (!word) return;
+    setAiError(null);
     setIsAiLoading(true);
     try {
       const data = await getAiEtymology(word.word);
       setAiDetails(data.details || "Analiz yapılamadı.");
       trackEvent('ai_details_view', { word: word.word, id: word.id });
-    } catch (error) {
-      setAiDetails("Bağlantı hatası.");
+    } catch (error: any) {
+      setAiError(error?.message || "Bağlantı hatası. Lütfen tekrar deneyin.");
     } finally {
       setIsAiLoading(false);
     }
@@ -467,33 +470,34 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                   </>
                 )}
 
-                {!aiDetails && !isAiLoading && (
-                  <button
-                    onClick={handleFetchAiDetails}
-                    style={{
-                      ...aiButtonStyle,
-                      padding: '8px 16px',
-                      fontSize: '0.85rem',
-                      marginTop: '8px',
-                      width: 'fit-content',
-                      alignSelf: 'center',
-                      fontFamily: 'var(--font-albert-sans), sans-serif',
-                      fontWeight: 600
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(11, 21, 23, 0.8)';
-                      e.currentTarget.style.backgroundColor = 'rgb(45, 180, 168)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(11, 21, 23, 0.6)';
-                      e.currentTarget.style.backgroundColor = 'rgb(38, 166, 154)';
-                    }}
-                  >
-                    <div className="ai-ready-dot" style={{ width: '6px', height: '6px' }}></div>
-                    Detaylı Köken Analizi
-                  </button>
+                {!aiDetails && !isAiLoading && !aiError && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', marginTop: '8px' }}>
+                    <button
+                      onClick={handleFetchAiDetails}
+                      style={{
+                        ...aiButtonStyle,
+                        padding: '8px 16px',
+                        fontSize: '0.85rem',
+                        width: 'fit-content',
+                        fontFamily: 'var(--font-albert-sans), sans-serif',
+                        fontWeight: 600
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(11, 21, 23, 0.8)';
+                        e.currentTarget.style.backgroundColor = 'rgb(45, 180, 168)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(11, 21, 23, 0.6)';
+                        e.currentTarget.style.backgroundColor = 'rgb(38, 166, 154)';
+                      }}
+                    >
+                      <div className="ai-ready-dot" style={{ width: '6px', height: '6px' }}></div>
+                      Detaylı Köken Analizi
+                    </button>
+                    <span style={{ fontStyle: 'italic', fontSize: '0.72rem', color: 'var(--sidebar-text-secondary)', opacity: 0.7 }}>*gemini-2.5-flash</span>
+                  </div>
                 )}
 
                 {isAiLoading && (
@@ -501,6 +505,20 @@ const RightDetailPanel: React.FC<RightDetailPanelProps> = ({
                     <div className="loading-spinner" style={{ width: '12px', height: '12px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                     <span>Analiz ediliyor...</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  </div>
+                )}
+
+                {aiError && !isAiLoading && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                    <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontSize: '0.83rem', lineHeight: 1.5, textAlign: 'center', maxWidth: '320px' }}>
+                      {aiError}
+                    </div>
+                    <button
+                      onClick={handleFetchAiDetails}
+                      style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--sidebar-border-color)', backgroundColor: 'transparent', color: 'var(--sidebar-text-primary)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-albert-sans), sans-serif' }}
+                    >
+                      Tekrar dene
+                    </button>
                   </div>
                 )}
               </div>

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import ThemeSwitch from './ThemeSwitch';
 import AboutButton from './AboutButton';
 import StatsButton from './StatsButton';
+import ApiKeyButton from './ApiKeyButton';
+import ApiKeyModal from './ApiKeyModal';
 
 interface SettingsMenuProps {
   onAboutClick: () => void;
@@ -12,6 +14,7 @@ interface SettingsMenuProps {
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick, limitPerLang, onLimitChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
   const [mapEffectsEnabled, setMapEffectsEnabled] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -210,9 +213,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onAboutClick, onStatsClick,
           gap: '8px',
         }}>
           <StatsButton onClick={onStatsClick} />
+          <ApiKeyButton onClick={() => { setApiKeyOpen(true); setIsOpen(false); }} />
           <AboutButton onClick={onAboutClick} />
         </div>
       </div>
+
+      <ApiKeyModal isOpen={apiKeyOpen} onClose={() => setApiKeyOpen(false)} />
     </div>
   );
 };

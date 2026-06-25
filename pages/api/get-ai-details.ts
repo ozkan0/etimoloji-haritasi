@@ -3,8 +3,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../../lib/supabaseClient';
 import { normalizeTurkish } from '../../utils/normalizeTurkish';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -15,11 +13,10 @@ export default async function handler(
     return res.status(400).json({ error: 'Word parameter is required and must be a string.' });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ error: 'Internal server error. Missing GEMINI_API_KEY configuration.' });
-  }
-
   const normalizedWord = normalizeTurkish(word);
+
+  const userKey = req.headers['x-gemini-key'];
+  const usingUserKey = typeof userKey === 'string' && userKey.trim().length > 0;
 
   try {
     const { data: cached } = await supabase
@@ -32,6 +29,16 @@ export default async function handler(
       return res.status(200).json({ details: cached.ai_details });
     }
 
+    const apiKey = (usingUserKey ? (userKey as string).trim() : '') || process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({
+        error: 'Sunucuda API anahtarı tanımlı değil. Ayarlardan kendi Gemini anahtarınızı girerek deneyebilirsiniz.',
+        code: 'NO_API_KEY',
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
@@ -61,6 +68,48 @@ export default async function handler(
 
   } catch (error: any) {
     console.error('Gemini API Error:', error);
-    return res.status(500).json({ error: `Internal server error: ${error.message || 'AI analizi yapılamadı.'}` });
+
+    const status: number | undefined = error?.status;
+    const reason: string | undefined = Array.isArray(error?.errorDetails)
+      ? error.errorDetails.find((d: any) => d?.reason)?.reason
+      : undefined;
+    const rawMessage: string = error?.message || '';
+
+    const keySource = usingUserKey ? 'Girdiğiniz API anahtarı' : 'Sunucu API anahtarı';
+
+    if (/api key expired/i.test(rawMessage)) {
+      return res.status(401).json({
+        error: `${keySource} süresi dolmuş. Lütfen anahtarı yenileyin.`,
+        code: 'API_KEY_EXPIRED',
+      });
+    }
+
+    if (reason === 'API_KEY_INVALID' || /api key not valid/i.test(rawMessage)) {
+      return res.status(401).json({
+        error: `${keySource} geçersiz veya süresi dolmuş. Lütfen anahtarı kontrol edin.`,
+        code: 'API_KEY_INVALID',
+      });
+    }
+
+    if (reason === 'PERMISSION_DENIED' || status === 403) {
+      return res.status(403).json({
+        error: `${keySource} bu işlem için yetkili değil. Anahtarın Gemini API erişimini kontrol edin.`,
+        code: 'PERMISSION_DENIED',
+      });
+    }
+
+    if (reason === 'RESOURCE_EXHAUSTED' || status === 429 || /quota|rate limit/i.test(rawMessage)) {
+      return res.status(429).json({
+        error: usingUserKey
+          ? 'API anahtarınızın kullanım limitine ulaşıldı. Kotanızı kontrol edin veya bir süre sonra tekrar deneyin.'
+          : 'Sunucunun kullanım limitine ulaşıldı. Kendi API anahtarınızı girerek devam edebilir veya sonra tekrar deneyebilirsiniz.',
+        code: 'RATE_LIMIT',
+      });
+    }
+
+    return res.status(502).json({
+      error: 'AI analizi şu anda yapılamadı. Lütfen biraz sonra tekrar deneyin.',
+      code: 'AI_ERROR',
+    });
   }
 }

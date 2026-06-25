@@ -1,3 +1,5 @@
+import { getGeminiKey } from './apiKey';
+
 export interface TdkMeaning {
   type?: string;
   text: string;
@@ -18,7 +20,9 @@ const pendingMeaningRequests = new Map<string, Promise<TdkResponse>>();
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `API Error: ${response.status}`);
+    const err = new Error(errorData.error || `API Error: ${response.status}`);
+    (err as Error & { code?: string }).code = errorData.code;
+    throw err;
   }
   return response.json();
 }
@@ -68,7 +72,13 @@ export const getWordMeaning = async (word: string): Promise<TdkResponse> => {
 };
 
 export const getAiEtymology = async (word: string): Promise<AiResponse> => {
-  const response = await fetch(`/api/get-ai-details?word=${encodeURIComponent(word)}`);
+  const headers: Record<string, string> = {};
+  const userKey = getGeminiKey();
+  if (userKey) {
+    headers['x-gemini-key'] = userKey;
+  }
+
+  const response = await fetch(`/api/get-ai-details?word=${encodeURIComponent(word)}`, { headers });
   return handleResponse<AiResponse>(response);
 };
 
